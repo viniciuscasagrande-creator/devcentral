@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
+import { requireAdmin } from "@/lib/auth-admin";
 import { getIntegrationStatus, runFullSync } from "@/lib/integrations";
 import { getLastSyncLog, listProjects } from "@/lib/db";
 
@@ -13,11 +14,18 @@ function validKey(provided: string, expected: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   try {
     const expectedKey = process.env.DASHBOARD_SYNC_KEY?.trim() || "";
+    if (!expectedKey) {
+      return NextResponse.json(
+        { error: "DASHBOARD_SYNC_KEY nao configurada" },
+        { status: 503 }
+      );
+    }
     if (expectedKey) {
-      const authHeader =
-        req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
+      const authHeader = ""; // Authorization agora e reservado para o ID token Firebase.
       let bodyKey = "";
       try {
         const body = await req.json();

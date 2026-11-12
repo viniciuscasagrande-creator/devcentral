@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth-admin";
 import { ensureSchema, getLastSyncLog, getSql, listProjects, mapRowToProject } from "@/lib/db";
 import { getIntegrationStatus } from "@/lib/integrations";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   try {
     const includeHidden = req.nextUrl.searchParams.get("includeHidden") === "true";
     const [projects, lastSync] = await Promise.all([
@@ -28,6 +31,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   try {
     await ensureSchema();
     const sql = getSql();

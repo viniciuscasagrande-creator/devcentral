@@ -1,5 +1,9 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAnalytics, isSupported, Analytics, logEvent } from "firebase/analytics";
+export interface FirebaseUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  getIdToken: (forceRefresh?: boolean) => Promise<string>;
+}
 
 export const firebaseConfig = {
   apiKey:
@@ -22,23 +26,106 @@ export const firebaseConfig = {
     process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-9P4K029JCV",
 };
 
-// Initialize Firebase (singleton-safe for Next.js SSR & HMR)
-export const firebaseApp: FirebaseApp =
-  getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+let sdkPromise: Promise<{
+  app: any;
+  auth: any;
+  authMod: any;
+  analyticsMod: any;
+}> | null = null;
 
-let analyticsInstance: Analytics | null = null;
-
-export async function initFirebaseAnalytics(): Promise<Analytics | null> {
+async function loadFirebaseBrowserSdk() {
   if (typeof window === "undefined") return null;
-  if (analyticsInstance) return analyticsInstance;
+  if (!sdkPromise) {
+    sdkPromise = (async () => {
+      const dynamicImport = new Function("u", "return import(u)") as (
+        u: string
+      ) => Promise<any>;
+      const appMod = await dynamicImport(
+        "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"
+      );
+      const authMod = await dynamicImport(
+        "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js"
+      );
+      let analyticsMod: any = null;
+      try {
+        analyticsMod = await dynamicImport(
+          "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js"
+        );
+      } catch {
+        // ignore analytics block
+      }
+      const app =
+        appMod.getApps().length > 0
+          ? appMod.getApp()
+          : appMod.initializeApp(firebaseConfig);
+      const auth = authMod.getAuth(app);
+      return { app, auth, authMod, analyticsMod };
+    })();
+  }
+  return sdkPromise;
+}
+
+export function subscribeFirebaseAuth(
+  callback: (user: FirebaseUser | null) => void
+): () => void {
+  if (typeof window === "undefined") return () => {};
+  let unsub: (() => void) | null = null;
+  let cancelled = false;
+
+  loadFirebaseBrowserSdk()
+    .then((sdk) => {
+      if (!sdk || cancelled) return;
+      unsub = sdk.authMod.onAuthStateChanged(
+        sdk.auth,
+        (u: FirebaseUser | null) => {
+          callback(u);
+        }
+      );
+    })
+    .catch(() => {
+      callback(null);
+    });
+
+  return () => {
+    cancelled = true;
+    if (unsub) unsub();
+  };
+}
+
+export async function signInWithGoogle(): Promise<FirebaseUser> {
+  const sdk = await loadFirebaseBrowserSdk();
+  if (!sdk) throw new Error("Firebase SDK indisponível fora do navegador");
+  const provider = new sdk.authMod.GoogleAuthProvider();
+  const result = await sdk.authMod.signInWithPopup(sdk.auth, provider);
+  return result.user;
+}
+
+export async function signOutFirebase(): Promise<void> {
+  const sdk = await loadFirebaseBrowserSdk();
+  if (!sdk) return;
+  await sdk.authMod.signOut(sdk.auth);
+}
+
+export async function getFirebaseIdToken(): Promise<string> {
+  const sdk = await loadFirebaseBrowserSdk();
+  const user: FirebaseUser | null = sdk?.auth?.currentUser || null;
+  if (!user) {
+    throw new Error("Entre no DevCentral para consultar os projetos.");
+  }
+  return user.getIdToken();
+}
+
+export async function initFirebaseAnalytics() {
   try {
-    const supported = await isSupported();
-    if (supported) {
-      analyticsInstance = getAnalytics(firebaseApp);
-      return analyticsInstance;
+    const sdk = await loadFirebaseBrowserSdk();
+    if (sdk?.analyticsMod) {
+      const supported = await sdk.analyticsMod.isSupported();
+      if (supported) {
+        return sdk.analyticsMod.getAnalytics(sdk.app);
+      }
     }
   } catch {
-    // ignore analytics block by adblockers
+    // ignore
   }
   return null;
 }
@@ -48,9 +135,10 @@ export async function trackDashboardEvent(
   params?: Record<string, any>
 ) {
   try {
+    const sdk = await loadFirebaseBrowserSdk();
     const analytics = await initFirebaseAnalytics();
-    if (analytics) {
-      logEvent(analytics, eventName, params);
+    if (sdk?.analyticsMod && analytics) {
+      sdk.analyticsMod.logEvent(analytics, eventName, params);
     }
   } catch {
     // ignore

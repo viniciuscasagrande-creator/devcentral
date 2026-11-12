@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { requireAdmin } from "@/lib/auth-admin";
 import { ensureSchema, getSql } from "@/lib/db";
 import { runFullSync } from "@/lib/integrations";
 
 export const dynamic = "force-dynamic";
 
 async function updateEnvLocal(updates: Record<string, string>) {
+  for (const [key, value] of Object.entries(updates)) {
+    process.env[key] = value;
+  }
+  if (process.env.NODE_ENV === "production") {
+    // Em produção (Cloud Run), não grava tokens em arquivos locais (.env.local)
+    return;
+  }
   const envPath = path.join(process.cwd(), ".env.local");
   let content = "";
   try {
@@ -16,7 +24,6 @@ async function updateEnvLocal(updates: Record<string, string>) {
   }
 
   for (const [key, value] of Object.entries(updates)) {
-    process.env[key] = value;
     const regex = new RegExp(`^${key}=.*$`, "m");
     const newLine = `${key}="${value}"`;
     if (regex.test(content)) {
@@ -30,6 +37,8 @@ async function updateEnvLocal(updates: Record<string, string>) {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   try {
     await ensureSchema();
     const sql = getSql();

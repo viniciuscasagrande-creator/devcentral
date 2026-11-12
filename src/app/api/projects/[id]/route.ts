@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth-admin";
 import { ensureSchema, getSql, mapRowToProject } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +8,8 @@ export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   try {
     await ensureSchema();
     const { id } = await context.params;
@@ -113,6 +116,8 @@ export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   try {
     await ensureSchema();
     const { id } = await context.params;

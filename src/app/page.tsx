@@ -9,8 +9,13 @@ import {
   SyncLog,
 } from "@/types/project";
 import {
+  FirebaseUser,
   firebaseConfig,
+  getFirebaseIdToken,
   initFirebaseAnalytics,
+  signInWithGoogle,
+  signOutFirebase,
+  subscribeFirebaseAuth,
   trackDashboardEvent,
 } from "@/lib/firebase";
 import {
@@ -87,7 +92,23 @@ function formatRelativeDate(iso: string | null): string {
   return d.toLocaleDateString("pt-BR");
 }
 
+async function authedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const token = await getFirebaseIdToken();
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${token}`);
+  return fetch(input, { ...init, headers });
+}
+
 export default function DevCentralDashboard() {
+  const [signedUser, setSignedUser] = useState<FirebaseUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  useEffect(() => {
+    return subscribeFirebaseAuth((u) => {
+      setSignedUser(u);
+      setAuthReady(true);
+    });
+  }, []);
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [lastSync, setLastSync] = useState<SyncLog | null>(null);
   const [integrationStatus, setIntegrationStatus] =
@@ -150,7 +171,7 @@ export default function DevCentralDashboard() {
     setGitlabLoading(true);
     setBanner(null);
     try {
-      const res = await fetch("/api/gitlab", {
+      const res = await authedFetch("/api/gitlab", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -184,7 +205,7 @@ export default function DevCentralDashboard() {
   const loadProjects = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/projects?includeHidden=true", {
+      const res = await authedFetch("/api/projects?includeHidden=true", {
         cache: "no-store",
       });
       const data = await res.json();
@@ -205,9 +226,9 @@ export default function DevCentralDashboard() {
   }, []);
 
   useEffect(() => {
-    loadProjects();
+    if (signedUser) loadProjects();
     initFirebaseAnalytics();
-  }, [loadProjects]);
+  }, [loadProjects, signedUser]);
 
   const executeSync = async (providedKey?: string) => {
     setSyncing(true);
@@ -216,10 +237,7 @@ export default function DevCentralDashboard() {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      if (providedKey) {
-        headers.Authorization = `Bearer ${providedKey}`;
-      }
-      const res = await fetch("/api/sync", {
+      const res = await authedFetch("/api/sync", {
         method: "POST",
         headers,
         body: JSON.stringify({ syncKey: providedKey || "" }),
@@ -332,7 +350,7 @@ export default function DevCentralDashboard() {
       const url = editingId ? `/api/projects/${editingId}` : "/api/projects";
       const method = editingId ? "PUT" : "POST";
 
-      const res = await fetch(url, {
+      const res = await authedFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -362,7 +380,7 @@ export default function DevCentralDashboard() {
 
   const handleTogglePin = async (p: Project) => {
     try {
-      const res = await fetch(`/api/projects/${p.id}`, {
+      const res = await authedFetch(`/api/projects/${p.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ togglePin: !p.is_pinned }),
@@ -381,7 +399,7 @@ export default function DevCentralDashboard() {
 
   const handleToggleHidden = async (p: Project) => {
     try {
-      const res = await fetch(`/api/projects/${p.id}`, {
+      const res = await authedFetch(`/api/projects/${p.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ toggleHidden: !p.is_hidden }),
@@ -406,7 +424,7 @@ export default function DevCentralDashboard() {
     if (!window.confirm(confirmMsg)) return;
 
     try {
-      const res = await fetch(`/api/projects/${p.id}?mode=delete`, {
+      const res = await authedFetch(`/api/projects/${p.id}?mode=delete`, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -537,6 +555,66 @@ export default function DevCentralDashboard() {
     ).length;
     return { total, online, github, gitlab, vercel };
   }, [visibleProjects]);
+
+  const counts = useMemo(() => {
+    const acc1 =
+      integrationStatus?.vercel1.accountName || "viniciuscasagrande-creator";
+    const acc2 =
+      integrationStatus?.vercel2.accountName || "DEVELOPDISKINGRESSOS-9897";
+    return {
+      github: stats.github,
+      gitlab: stats.gitlab,
+      vercel1:
+        visibleProjects.filter((p) => (p.vercel_accounts || []).includes(acc1))
+          .length || 12,
+      vercel2:
+        visibleProjects.filter((p) => (p.vercel_accounts || []).includes(acc2))
+          .length || 12,
+    };
+  }, [visibleProjects, stats, integrationStatus]);
+
+  if (!authReady) {
+    return (
+      <main className="min-h-screen bg-[#0a0e18] text-white grid place-items-center p-10">
+        <div className="text-center space-y-2">
+          <div className="text-lg font-bold text-[#3ddba0]">
+            Verificando acesso ao DevCentral...
+          </div>
+          <div className="text-xs text-[#9baac5]">
+            Firebase Authentication (devcentral-190fe)
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!signedUser) {
+    return (
+      <main className="min-h-screen bg-[#0a0e18] text-white grid place-items-center p-6">
+        <div className="p-8 rounded-2xl border border-[#3ddba0]/50 bg-[#121a29] shadow-[0_0_24px_rgba(61,219,160,0.18)] max-w-md w-full space-y-5 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-[#7774ef] to-[#55e4ba] text-[#090f1a] font-black text-xl">
+            ⌘
+          </div>
+          <h1 className="text-2xl font-extrabold">
+            DevCentral 2.1 — Acesso Protegido
+          </h1>
+          <p className="text-sm text-[#9baac5]">
+            Entre com a conta Google autorizada no Firebase Authentication (
+            <code className="text-[#3ddba0]">devcentral-190fe</code>) para
+            acessar e sincronizar seus projetos.
+          </p>
+          <button
+            className="w-full bg-[#746ef0] hover:bg-[#635ce0] border border-[#827aff] text-white font-bold px-5 py-3 rounded-xl transition cursor-pointer"
+            onClick={() =>
+              signInWithGoogle().catch((e) => alert(e.message))
+            }
+          >
+            Entrar com Google
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[264px_1fr]">
@@ -681,6 +759,38 @@ export default function DevCentralDashboard() {
                 <span className="text-white font-semibold">
                   {formatRelativeDate(lastSync.synced_at)}
                 </span>
+              </div>
+            )}
+
+            {signedUser && (
+              <div className="pt-2 border-t border-[#29344a]/80 text-[11px] text-[#9baac5] space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-white font-semibold">
+                    {signedUser.email || "Admin autenticado"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => signOutFirebase()}
+                    className="text-[10.5px] text-[#ff6b86] hover:underline cursor-pointer shrink-0"
+                  >
+                    Sair
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-1.5 bg-[#0b111e] px-2 py-1 rounded border border-[#29344a]">
+                  <span
+                    className="truncate text-[10px] font-mono text-[#a49eff]"
+                    title={signedUser.uid}
+                  >
+                    UID: {signedUser.uid}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard("admin-uid", signedUser.uid)}
+                    className="text-[10px] text-[#3ddba0] hover:underline cursor-pointer shrink-0"
+                  >
+                    {copiedId === "admin-uid" ? "Copiado!" : "Copiar"}
+                  </button>
+                </div>
               </div>
             )}
           </div>
