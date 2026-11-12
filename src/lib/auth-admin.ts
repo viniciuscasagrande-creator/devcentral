@@ -85,43 +85,38 @@ export async function verifyFirebaseIdToken(
 export async function requireAdmin(
   req: NextRequest
 ): Promise<NextResponse | null> {
-  const allowedUid = process.env.DEVCENTRAL_ADMIN_UID?.trim();
-  if (!allowedUid) {
-    return NextResponse.json(
-      {
-        error:
-          "Administrador não configurado explicitamente (defina DEVCENTRAL_ADMIN_UID no ambiente do servidor).",
-      },
-      { status: 503 }
-    );
-  }
-
   const bearer = req.headers
     .get("authorization")
     ?.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!bearer) {
     return NextResponse.json(
-      { error: "Autenticação obrigatória (401 Unauthorized)" },
+      { error: "Autenticação obrigatória" },
       { status: 401 }
     );
   }
 
+  let user: { uid: string; email?: string };
   try {
-    const user = await verifyFirebaseIdToken(bearer);
-    if (user.uid !== allowedUid) {
-      return NextResponse.json(
-        {
-          error: "Acesso não autorizado para este UID (403 Forbidden)",
-          uid: user.uid,
-        },
-        { status: 403 }
-      );
-    }
-    return null;
+    user = await verifyFirebaseIdToken(bearer);
   } catch {
     return NextResponse.json(
-      { error: "Sessão inválida ou expirada (401 Unauthorized)" },
+      { error: "Sessão inválida ou expirada" },
       { status: 401 }
     );
   }
+
+  const allowedUid = process.env.DEVCENTRAL_ADMIN_UID?.trim();
+  if (!allowedUid) {
+    return NextResponse.json(
+      { error: "Administrador não configurado" },
+      { status: 503 }
+    );
+  }
+  if (user.uid !== allowedUid) {
+    return NextResponse.json(
+      { error: "Acesso não autorizado" },
+      { status: 403 }
+    );
+  }
+  return null;
 }
