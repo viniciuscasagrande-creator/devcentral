@@ -85,6 +85,17 @@ export async function verifyFirebaseIdToken(
 export async function requireAdmin(
   req: NextRequest
 ): Promise<NextResponse | null> {
+  const allowedUid = process.env.DEVCENTRAL_ADMIN_UID?.trim();
+  if (!allowedUid) {
+    return NextResponse.json(
+      {
+        error:
+          "Administrador não configurado explicitamente (defina DEVCENTRAL_ADMIN_UID no ambiente do servidor).",
+      },
+      { status: 503 }
+    );
+  }
+
   const bearer = req.headers
     .get("authorization")
     ?.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -95,22 +106,8 @@ export async function requireAdmin(
     );
   }
 
-  let user: { uid: string; email?: string };
   try {
-    user = await verifyFirebaseIdToken(bearer);
-  } catch {
-    return NextResponse.json(
-      { error: "Sessão inválida ou expirada (401 Unauthorized)" },
-      { status: 401 }
-    );
-  }
-
-  const allowedUid = process.env.DEVCENTRAL_ADMIN_UID?.trim();
-  const allowedEmail =
-    process.env.DEVCENTRAL_ADMIN_EMAIL?.trim()?.toLowerCase() ||
-    "develop.diskingressos@gmail.com";
-
-  if (allowedUid) {
+    const user = await verifyFirebaseIdToken(bearer);
     if (user.uid !== allowedUid) {
       return NextResponse.json(
         {
@@ -121,19 +118,10 @@ export async function requireAdmin(
       );
     }
     return null;
+  } catch {
+    return NextResponse.json(
+      { error: "Sessão inválida ou expirada (401 Unauthorized)" },
+      { status: 401 }
+    );
   }
-
-  // Fallback seguro por e-mail do administrador caso DEVCENTRAL_ADMIN_UID ainda não tenha sido preenchido
-  if (user.email && user.email.toLowerCase() === allowedEmail) {
-    return null;
-  }
-
-  return NextResponse.json(
-    {
-      error:
-        "Conta Google não autorizada (403 Forbidden). Copie seu UID abaixo para DEVCENTRAL_ADMIN_UID se você for o administrador.",
-      uid: user.uid,
-    },
-    { status: 403 }
-  );
 }

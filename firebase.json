@@ -1,11 +1,20 @@
 {
   "hosting": {
-    "public": "firebase-dist",
-    "cleanUrls": true,
+    "public": "firebase-public",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "devcentral-api",
+          "region": "us-central1",
+          "pinTag": true
+        }
+      }
     ]
   }
 }

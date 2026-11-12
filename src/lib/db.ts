@@ -62,6 +62,23 @@ export async function ensureSchema() {
       details TEXT DEFAULT ''
     );
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS telemetry_recommendations (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      project_name TEXT NOT NULL,
+      platform_label TEXT NOT NULL DEFAULT '',
+      severity TEXT NOT NULL DEFAULT 'medium',
+      kind TEXT NOT NULL DEFAULT 'preventive_suggestion',
+      title TEXT NOT NULL,
+      explanation TEXT NOT NULL DEFAULT '',
+      possible_causes TEXT[] DEFAULT '{}',
+      remediation_steps TEXT[] DEFAULT '{}',
+      suggested_commands TEXT[] DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'pending',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
   initialized = true;
 }
 
@@ -82,16 +99,19 @@ export async function listProjects(includeHidden = false): Promise<Project[]> {
 }
 
 export async function getLastSyncLog(): Promise<SyncLog | null> {
+  const logs = await listSyncLogs(1);
+  return logs[0] || null;
+}
+
+export async function listSyncLogs(limit = 20): Promise<SyncLog[]> {
   await ensureSchema();
   const sql = getSql();
   const rows = await sql`
     SELECT * FROM sync_logs
     ORDER BY synced_at DESC
-    LIMIT 1
+    LIMIT ${limit}
   `;
-  if (!rows.length) return null;
-  const r = rows[0];
-  return {
+  return rows.map((r) => ({
     id: Number(r.id),
     synced_at: new Date(r.synced_at).toISOString(),
     github_count: Number(r.github_count || 0),
@@ -101,7 +121,19 @@ export async function getLastSyncLog(): Promise<SyncLog | null> {
     vercel2_count: Number(r.vercel2_count || 0),
     status: String(r.status || "success"),
     details: String(r.details || ""),
-  };
+  }));
+}
+
+export async function getProjectById(id: string): Promise<Project | null> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = await sql`
+    SELECT * FROM projects
+    WHERE id = ${id}
+    LIMIT 1
+  `;
+  if (!rows.length) return null;
+  return mapRowToProject(rows[0]);
 }
 
 export function mapRowToProject(r: Record<string, any>): Project {
