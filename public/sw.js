@@ -1,4 +1,4 @@
-const CACHE_NAME = "devcentral-shell-v12";
+const CACHE_NAME = "devcentral-shell-v13";
 const STATIC_ASSETS = ["/manifest.json", "/icon.svg"];
 
 self.addEventListener("install", (event) => {

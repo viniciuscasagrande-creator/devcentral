@@ -246,6 +246,9 @@ export function AppSidebar({
           </div>
 
           <nav className="space-y-1 text-xs">
+            <a href="/operacoes" className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-[#a5f3fc] hover:text-white hover:bg-[#123444] font-semibold transition">
+              <span>⚙ Operações inteligentes</span><span className="text-[10px] text-[#67e8f9]">4.2–4.5</span>
+            </a>
             <a href="/assistente" className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-[#c9befd] hover:text-white hover:bg-[#211b48] font-semibold transition">
               <span>✦ Assistente de Manutenção</span><span className="text-[10px] text-[#a99aff]">IA</span>
             </a>

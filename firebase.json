@@ -13,6 +13,18 @@
         "destination": "/telemetria/index.html"
       },
       {
+        "source": "/relatorios",
+        "destination": "/relatorios/index.html"
+      },
+      {
+        "source": "/assistente",
+        "destination": "/assistente/index.html"
+      },
+      {
+        "source": "/operacoes",
+        "destination": "/operacoes/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

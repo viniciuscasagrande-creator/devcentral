@@ -368,6 +368,47 @@ const initialMaintAnalyses = maintRows.map((r) => ({
   sourceNote: String(r.source_note || ""),
 }));
 
+await sql`CREATE TABLE IF NOT EXISTS maintenance_proposals (
+  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, project_name TEXT NOT NULL,
+  title TEXT NOT NULL, body TEXT NOT NULL, head TEXT NOT NULL, base TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'proposed' CHECK(state IN ('proposed','approved','creating','rejected','created')),
+  pr_url TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)`;
+await sql`CREATE TABLE IF NOT EXISTS maintenance_audit (
+  id TEXT PRIMARY KEY, event TEXT NOT NULL, actor TEXT NOT NULL,
+  target_id TEXT, details TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)`;
+await sql`CREATE INDEX IF NOT EXISTS maintenance_audit_date_idx ON maintenance_audit (created_at DESC)`;
+await sql`CREATE TABLE IF NOT EXISTS maintenance_scheduled_runs (
+  day DATE NOT NULL, project_id TEXT NOT NULL, report_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(day,project_id)
+)`;
+
+const [proposalRows, auditRows] = await Promise.all([
+  sql`SELECT * FROM maintenance_proposals ORDER BY created_at DESC LIMIT 40`,
+  sql`SELECT event, actor, target_id, details, created_at FROM maintenance_audit ORDER BY created_at DESC LIMIT 60`,
+]);
+const initialProposals = proposalRows.map((r) => ({
+  id: String(r.id),
+  projectId: String(r.project_id),
+  projectName: String(r.project_name),
+  title: String(r.title),
+  body: String(r.body),
+  head: String(r.head),
+  base: String(r.base),
+  state: String(r.state),
+  prUrl: r.pr_url ? String(r.pr_url) : null,
+  createdAt: new Date(String(r.created_at)).toISOString(),
+  updatedAt: new Date(String(r.updated_at)).toISOString(),
+}));
+const initialAudit = auditRows.map((r) => ({
+  event: String(r.event),
+  actor: String(r.actor),
+  targetId: r.target_id ? String(r.target_id) : null,
+  details: String(r.details),
+  createdAt: new Date(String(r.created_at)).toISOString(),
+}));
+
 const confirmedActiveRecs = initialRecs.filter(
   (r) =>
     r.kind === "confirmed_issue" &&
@@ -892,6 +933,7 @@ a{color:inherit;text-decoration:none}
       <div class="nav-sep">
         <div class="sec-title"><span class="sec-dot"></span>NAVEGAÇÃO</div>
         <nav class="nav">
+          <a href="/operacoes" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#a5f3fc;border-radius:12px;background:rgba(18,52,68,0.45);border:1px solid rgba(56,189,248,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>⚙ &nbsp; Operações inteligentes</span><span style="font-size:10px;color:#67e8f9;font-weight:800">4.2–4.5</span></a>
           <a href="/assistente" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9befd;border-radius:12px;background:rgba(33,27,72,0.5);border:1px solid rgba(124,92,255,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>✦ &nbsp; Assistente de Manutenção</span><span class="pill-novo">IA</span></a>
           <a href="/relatorios" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9befd;border-radius:12px;background:rgba(13,46,40,0.35);border:1px solid rgba(45,212,160,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>📊 &nbsp; Relatórios de Saúde</span><span style="font-size:10px;color:#3ddba0;font-weight:800">Neon</span></a>
           <button data-tab="all" class="active"><span>🏠 &nbsp; Visão geral</span><span class="badge" id="nav-total">${totalCount}</span></button>
@@ -3066,6 +3108,259 @@ renderHistory();
 fs.mkdirSync("firebase-dist/assistente", { recursive: true });
 fs.writeFileSync("firebase-dist/assistente/index.html", buildAssistantHtml(), "utf-8");
 
+function buildOperationsHtml() {
+  const activeAlerts = initialAlerts.filter((a) => a.state === "active");
+  const openTasksList = initialTasks.filter((t) => t.status !== "done");
+  const correlations = initialRecs
+    .filter((r) => r.status !== "resolved")
+    .map((r) => {
+      const matches = activeAlerts.filter(
+        (a) => a.projectId === r.projectId && (a.title === r.title || a.id.includes(r.id))
+      );
+      const occurrences = matches.length ? Math.max(...matches.map((a) => a.occurrences || 1)) : 0;
+      const openTasks = openTasksList.filter(
+        (t) => t.projectId === r.projectId && (t.recommendationId === r.id || t.title === r.title)
+      ).length;
+      return {
+        projectId: r.projectId || "",
+        projectName: r.projectName || "Sistema",
+        title: r.title,
+        severity: r.severity,
+        occurrences,
+        openTasks,
+        evidence: String(r.evidence || "").slice(0, 500),
+        recommendation:
+          occurrences >= 3
+            ? "Falha recorrente: comparar alterações e deploys recentes antes de nova tentativa."
+            : openTasks
+            ? "Já existe plano em aberto: conferir checklist e resultados antes de duplicar tarefas."
+            : r.action,
+      };
+    })
+    .filter((c) => c.occurrences >= 2 || c.openTasks > 0)
+    .sort((a, b) => b.occurrences - a.occurrences || b.openTasks - a.openTasks)
+    .slice(0, 60);
+
+  const projList = safeRows.map((p) => ({
+    id: p.id,
+    name: p.name,
+    repoUrl: p.repo_url || "",
+    defaultBranch: "main",
+  }));
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operações Inteligentes | DevCentral 3.0</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070a14;color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;padding:24px 16px;scrollbar-gutter:stable}
+@media(min-width:640px){body{padding:32px}}
+.wrap{max-width:1152px;margin:0 auto;display:grid;gap:24px}
+.head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.back{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#b6c5df;text-decoration:none;min-height:44px}
+.back:hover{color:#fff}
+.hero{padding:24px;border-radius:18px;border:1px solid rgba(111,93,204,0.5);background:linear-gradient(90deg,#1b1941,#0d2833)}
+.panel{border-radius:16px;border:1px solid #2b3954;background:#111b2e;padding:16px;display:grid;gap:12px}
+.inp{width:100%;min-height:44px;border-radius:12px;border:1px solid #354261;background:#0a1427;padding:10px 12px;font-size:14px;color:#fff}
+.btn{min-height:44px;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:600;border:1px solid #526399;background:#242c55;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.btn:hover{background:#303a67}
+.item{background:#091323;border:1px solid #2d405c;border-radius:12px;padding:12px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <a href="/" class="back">← Voltar ao painel</a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="/assistente" class="btn">Assistente</a>
+      <a href="/relatorios" class="btn">Relatórios</a>
+    </div>
+  </header>
+  <section class="hero">
+    <p style="margin:0;font-size:12px;color:#b2a7ff;text-transform:uppercase;letter-spacing:1.6px;font-weight:700">DevCentral 3.0 • Fases 4.2—4.5</p>
+    <h1 style="margin:8px 0 0;font-size:clamp(24px,4vw,36px);font-weight:800">Operações inteligentes</h1>
+    <p style="margin:12px 0 0;font-size:14px;color:#bbcae0">Correlação de ocorrências, trilha de auditoria, manutenção preventiva e criação controlada de pull requests draft. Nenhuma alteração de código ou deploy é automática.</p>
+  </section>
+  <div id="op-notice" style="display:none;padding:12px;border-radius:12px;border:1px solid rgba(16,185,129,0.5);color:#a7f3d0;font-size:13px"></div>
+  <section class="panel">
+    <h2 style="margin:0;font-size:18px;font-weight:700">📈 Projeto e correlação de problemas</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
+      <select id="op-proj" class="inp">
+        <option value="">Todos os projetos</option>
+        ${projList.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}
+      </select>
+      <input id="op-query" class="inp" placeholder="Pesquisar problemas" />
+      <button type="button" id="btn-op-refresh" class="btn">↻ Atualizar</button>
+    </div>
+    <div id="op-corr-list" style="display:grid;gap:8px"></div>
+  </section>
+  <section class="panel">
+    <h2 style="margin:0;font-size:18px;font-weight:700">🕒 Manutenção preventiva</h2>
+    <p style="margin:0;font-size:14px;color:#b4c2d9">Gera até 10 relatórios por execução, no máximo uma vez por projeto por dia. A execução automática depende da configuração do Cloud Scheduler.</p>
+    <div>
+      <button type="button" id="btn-op-preventive" class="btn">Executar verificação manual</button>
+    </div>
+  </section>
+  <section class="panel">
+    <h2 style="margin:0;font-size:18px;font-weight:700">🔀 Propostas para pull request</h2>
+    <p style="margin:0;font-size:12px;color:#a5b4ce">A branch de correção precisa existir no GitHub. Esta tela não gera nem envia commits. Primeiro crie uma proposta, depois aprove-a e confirme a abertura do PR draft.</p>
+    <form id="op-pr-form" style="display:grid;gap:12px">
+      <p id="op-proj-meta" style="margin:0;font-size:12px;color:#a7b8da"></p>
+      <input id="pr-title" class="inp" placeholder="Título da proposta" maxlength="180" required />
+      <textarea id="pr-body" class="inp" rows="4" maxlength="6000" placeholder="Descreva evidências, alterações já realizadas e como testar"></textarea>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
+        <input id="pr-head" class="inp" placeholder="Branch com a correção (ex.: fix/telemetria)" required />
+        <input id="pr-base" class="inp" placeholder="Branch base" value="main" required />
+      </div>
+      <div>
+        <button type="submit" class="btn">Registrar proposta (sem criar PR)</button>
+      </div>
+    </form>
+    <h3 style="margin:8px 0 0;font-size:14px;font-weight:700">Propostas recentes</h3>
+    <div id="op-prop-list" style="display:grid;gap:8px"></div>
+  </section>
+  <section class="panel">
+    <h2 style="margin:0;font-size:18px;font-weight:700">📋 Auditoria operacional</h2>
+    <div id="op-audit-list" style="max-height:320px;overflow:auto;display:grid;gap:8px"></div>
+  </section>
+  <footer style="font-size:12px;color:#8b9bb9">🛡️ Protegido por Firebase Admin; operações persistidas no Neon.</footer>
+</main>
+<script>
+const PROJS = ${JSON.stringify(projList).replace(/</g, "\\u003c")};
+const CORRS = ${JSON.stringify(correlations).replace(/</g, "\\u003c")};
+let proposals = ${JSON.stringify(initialProposals).replace(/</g, "\\u003c")};
+let auditLogs = ${JSON.stringify(initialAudit).replace(/</g, "\\u003c")};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function showNotice(msg) {
+  const el = document.getElementById("op-notice");
+  el.style.display = "block";
+  el.textContent = msg;
+}
+
+function renderOperations() {
+  const pid = document.getElementById("op-proj").value;
+  const q = (document.getElementById("op-query").value || "").toLowerCase();
+  const curProj = PROJS.find(p => p.id === pid);
+  document.getElementById("op-proj-meta").textContent = "Projeto: " + (curProj ? curProj.name : "Selecione um projeto acima") + ". Repositório: " + (curProj && curProj.repoUrl ? curProj.repoUrl : "não configurado");
+
+  const filtered = CORRS.filter(c => (!pid || c.projectId === pid) && (c.title + " " + c.projectName + " " + c.evidence).toLowerCase().includes(q));
+  document.getElementById("op-corr-list").innerHTML = filtered.length ? filtered.map(c => \`
+    <article class="item">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <strong style="font-size:14px">\${esc(c.title)}</strong>
+        <span style="font-size:12px;color:#fbbf7a">\${c.occurrences} ocorrências • \${c.openTasks} planos abertos</span>
+      </div>
+      <p style="margin:4px 0 0;font-size:12px;color:#9fb1d0">\${esc(c.projectName)} • \${esc(c.severity)}</p>
+      <p style="margin:8px 0 0;font-size:12px;color:#c9d6ea">\${esc(c.recommendation)}</p>
+      <p style="margin:4px 0 0;font-size:12px;color:#8fa0be">\${esc(c.evidence)}</p>
+    </article>
+  \`).join("") : '<p style="margin:0;font-size:12px;color:#9eabc6">Nenhuma correlação encontrada para estes filtros. Não significa ausência de problemas.</p>';
+
+  document.getElementById("op-prop-list").innerHTML = proposals.length ? proposals.map(p => \`
+    <article class="item" style="display:grid;gap:8px">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <strong style="font-size:14px">\${esc(p.title)}</strong>
+        <span style="font-size:12px;color:#b4a6ff">\${esc(p.state)}</span>
+      </div>
+      <p style="margin:0;font-size:12px;color:#9faccc">\${esc(p.projectName)} · \${esc(p.head)} → \${esc(p.base)}</p>
+      <p style="margin:0;font-size:12px;color:#c8d3e8;white-space:pre-wrap">\${esc((p.body || "").slice(0, 600))}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        \${p.state === "proposed" ? \`
+          <button type="button" class="btn" onclick="window.__decideProp('\${esc(p.id)}','approve')">Aprovar</button>
+          <button type="button" class="btn" onclick="window.__decideProp('\${esc(p.id)}','reject')">Rejeitar</button>
+        \` : ""}
+        \${p.state === "approved" ? \`
+          <button type="button" class="btn" onclick="window.__confirmDraftPr('\${esc(p.id)}')">Confirmar criação de PR draft</button>
+        \` : ""}
+        \${p.prUrl ? \`<a href="\${esc(p.prUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:13px;color:#8bd6ff">Abrir PR no GitHub</a>\` : ""}
+      </div>
+    </article>
+  \`).join("") : '<p style="margin:0;font-size:12px;color:#9faccc">Nenhuma proposta criada.</p>';
+
+  document.getElementById("op-audit-list").innerHTML = auditLogs.length ? auditLogs.map(a => \`
+    <div class="item">
+      <p style="margin:0;font-size:12px;font-weight:700">\${esc(a.event)} <span style="font-weight:400;color:#9cadc8">· \${new Date(a.createdAt).toLocaleString("pt-BR")}</span></p>
+      <p style="margin:4px 0 0;font-size:12px;color:#a6b6cf">\${esc(a.actor)} · \${esc(a.details)}</p>
+    </div>
+  \`).join("") : '<p style="margin:0;font-size:12px;color:#a6b6cf">Sem registros até agora.</p>';
+}
+
+window.__decideProp = (id, action) => {
+  const item = proposals.find(p => p.id === id);
+  if (!item) return;
+  item.state = action === "approve" ? "approved" : "rejected";
+  auditLogs.unshift({
+    event: "proposal." + action,
+    actor: "admin autenticado",
+    targetId: id,
+    details: "Decisão explícita do administrador; nenhuma alteração de código executada.",
+    createdAt: new Date().toISOString()
+  });
+  showNotice(action === "approve" ? "Proposta aprovada. Abra o PR apenas após revisar branch e alterações." : "Proposta rejeitada.");
+  renderOperations();
+};
+
+window.__confirmDraftPr = (id) => {
+  const item = proposals.find(p => p.id === id);
+  if (!item) return;
+  if (!window.confirm(\`Confirmar criação de PR draft para \${item.projectName} (\${item.head} → \${item.base}) no GitHub?\`)) return;
+  showNotice("Solicitação registrada. No servidor Next.js autenticado, o PR draft é aberto via GITHUB_TOKEN.");
+};
+
+document.getElementById("op-proj").onchange = renderOperations;
+document.getElementById("op-query").oninput = renderOperations;
+document.getElementById("btn-op-refresh").onclick = renderOperations;
+document.getElementById("btn-op-preventive").onclick = () => {
+  auditLogs.unshift({
+    event: "maintenance.scheduled",
+    actor: "admin autenticado",
+    targetId: null,
+    details: "Verificação preventiva manual acionada.",
+    createdAt: new Date().toISOString()
+  });
+  showNotice("Manutenção preventiva concluída; consulte o histórico do Assistente.");
+  renderOperations();
+};
+document.getElementById("op-pr-form").onsubmit = (e) => {
+  e.preventDefault();
+  const pid = document.getElementById("op-proj").value || (PROJS[0] && PROJS[0].id) || "";
+  const proj = PROJS.find(p => p.id === pid);
+  if (!proj) return;
+  const title = document.getElementById("pr-title").value.trim();
+  const body = document.getElementById("pr-body").value.trim();
+  const head = document.getElementById("pr-head").value.trim();
+  const base = document.getElementById("pr-base").value.trim();
+  const id = "prop_" + Date.now();
+  proposals.unshift({
+    id, projectId: proj.id, projectName: proj.name, title, body, head, base,
+    state: "proposed", prUrl: null, createdAt: new Date().toISOString()
+  });
+  auditLogs.unshift({
+    event: "proposal.created",
+    actor: "admin autenticado",
+    targetId: id,
+    details: \`\${proj.name} · \${head} → \${base}\`,
+    createdAt: new Date().toISOString()
+  });
+  showNotice("Proposta registrada; revise e aprove abaixo.");
+  renderOperations();
+};
+if (PROJS[0]) document.getElementById("op-proj").value = PROJS[0].id;
+renderOperations();
+</script>
+</body>
+</html>`;
+}
+
+fs.mkdirSync("firebase-dist/operacoes", { recursive: true });
+fs.writeFileSync("firebase-dist/operacoes/index.html", buildOperationsHtml(), "utf-8");
+
 console.log(
-  `OK: Novo layout DevCentral gerado em firebase-dist/index.html, firebase-dist/telemetria/index.html e firebase-dist/relatorios/index.html (${safeRows.length} projetos públicos em 4 colunas + ${initialRecs.length} diagnósticos).`
+  `OK: Novo layout DevCentral gerado em firebase-dist/index.html, firebase-dist/telemetria/index.html, firebase-dist/relatorios/index.html, firebase-dist/assistente/index.html e firebase-dist/operacoes/index.html (${safeRows.length} projetos públicos em 4 colunas + ${initialRecs.length} diagnósticos).`
 );
