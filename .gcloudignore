@@ -12,3 +12,4 @@ service-account*.json
 .firebase/
 firebase-dist/
 *.log
+backups/

@@ -9,3 +9,4 @@ out/
 firebase-dist/
 *.tsbuildinfo
 next-env.d.ts
+backups/
