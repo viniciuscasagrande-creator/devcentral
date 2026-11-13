@@ -271,6 +271,7 @@ async function fetchGitLabProjects(): Promise<{
     }
 
     const all: any[] = [];
+    const seenIds = new Set<number>();
     for (let page = 1; page <= 5; page++) {
       const endpoint = token
         ? `${baseUrl}/api/v4/projects?membership=true&simple=false&order_by=last_activity_at&sort=desc&per_page=100&page=${page}`
@@ -288,8 +289,35 @@ async function fetchGitLabProjects(): Promise<{
       }
       const data = await res.json();
       if (!Array.isArray(data)) break;
-      all.push(...data);
+      for (const item of data) {
+        if (item?.id && !seenIds.has(Number(item.id))) {
+          seenIds.add(Number(item.id));
+          all.push(item);
+        }
+      }
       if (data.length < 100) break;
+    }
+
+    if (token && username) {
+      try {
+        const userEndpoint = `${baseUrl}/api/v4/users/${encodeURIComponent(
+          username
+        )}/projects?order_by=last_activity_at&sort=desc&per_page=100`;
+        const userRes = await fetch(userEndpoint, { headers, cache: "no-store" });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (Array.isArray(userData)) {
+            for (const item of userData) {
+              if (item?.id && !seenIds.has(Number(item.id))) {
+                seenIds.add(Number(item.id));
+                all.push(item);
+              }
+            }
+          }
+        }
+      } catch {
+        // ignore supplementary user lookup errors
+      }
     }
 
     // Fetch top language for first 25 projects in parallel
@@ -559,7 +587,46 @@ export async function runFullSync() {
   ];
   const matchedVercelKeys = new Set<string>();
 
-  // Correlate Vercel projects from both accounts with GitHub/GitLab repositories
+  const attachVercelToRepo = (target: RawRepo, vp: VercelProjectData) => {
+    const depEntry: VercelDeploymentLink = {
+      account: vp.accountLabel,
+      sourceKey: vp.sourceKey,
+      url: vp.deployUrl,
+      vercelProjectId: vp.id,
+      status: vp.deployStatus,
+    };
+    const isFirstVercelAttach = !target.vercel_project_id;
+    const isBetterReadyDeploy =
+      vp.deployStatus === "READY" && target.last_deploy_status !== "READY";
+
+    target.deployments = [...target.deployments, depEntry];
+    if (
+      vp.deployUrl &&
+      (!target.deploy_url || isFirstVercelAttach || isBetterReadyDeploy)
+    ) {
+      target.deploy_url = vp.deployUrl;
+    }
+    if (isFirstVercelAttach || isBetterReadyDeploy) {
+      target.vercel_project_id = vp.id;
+    }
+    if (vp.deployStatus && (isFirstVercelAttach || isBetterReadyDeploy || !target.last_deploy_status)) {
+      target.last_deploy_status = vp.deployStatus;
+    }
+    if (vp.framework) {
+      target.framework = vp.framework;
+      if (target.tech === "Não informada") {
+        target.tech = formatFrameworkTech(vp.framework, target.tech);
+      }
+    }
+    if (vp.deployUrl && target.state !== "archived") {
+      target.state = "online";
+    }
+    if (!target.vercel_accounts.includes(vp.accountLabel)) {
+      target.vercel_accounts = [...target.vercel_accounts, vp.accountLabel];
+    }
+  };
+
+  // Pass 1: Correlate Vercel projects that have an explicit repository link (byRepoKey or byRepoId)
   for (const vp of allVercel) {
     const uniqueKey = `${vp.sourceKey}:${vp.id}`;
     const byRepoKey = vp.repoKey
@@ -573,51 +640,79 @@ export async function runFullSync() {
               r.external_id === `gitlab:${vp.linkedRepoId}`
           )
         : [];
-    const byExactName =
-      byRepoKey.length === 0 && byRepoId.length === 0
-        ? allRepos.filter((r) => normalizeName(r.name) === normalizeName(vp.name))
-        : [];
 
-    const candidates =
-      byRepoKey.length > 0
-        ? byRepoKey
-        : byRepoId.length > 0
-        ? byRepoId
-        : byExactName.length === 1
-        ? byExactName
-        : [];
-
-    const target = candidates[0];
-    if (target) {
+    const explicitTargets = byRepoKey.length > 0 ? byRepoKey : byRepoId;
+    if (explicitTargets.length > 0) {
       matchedVercelKeys.add(uniqueKey);
-      const depEntry: VercelDeploymentLink = {
-        account: vp.accountLabel,
-        sourceKey: vp.sourceKey,
-        url: vp.deployUrl,
-        vercelProjectId: vp.id,
-        status: vp.deployStatus,
-      };
-      target.deployments = [...target.deployments, depEntry];
-      if (!target.deploy_url && vp.deployUrl) {
-        target.deploy_url = vp.deployUrl;
+      for (const target of explicitTargets) {
+        attachVercelToRepo(target, vp);
       }
-      if (!target.vercel_project_id) {
-        target.vercel_project_id = vp.id;
-      }
-      if (vp.deployStatus) {
-        target.last_deploy_status = vp.deployStatus;
-      }
-      if (vp.framework) {
-        target.framework = vp.framework;
-        if (target.tech === "Não informada") {
-          target.tech = formatFrameworkTech(vp.framework, target.tech);
+      // Also attach to any repository whose normalized name matches vp.name (e.g., safesaff on GitHub/GitLab when Vercel safesaff points to safsafe)
+      for (const sameNameRepo of allRepos) {
+        if (
+          !explicitTargets.includes(sameNameRepo) &&
+          normalizeName(sameNameRepo.name) === normalizeName(vp.name) &&
+          !sameNameRepo.deploy_url
+        ) {
+          attachVercelToRepo(sameNameRepo, vp);
         }
       }
-      if (vp.deployUrl && target.state !== "archived") {
-        target.state = "online";
+    }
+  }
+
+  // Pass 2: Correlate remaining unlinked Vercel projects by normalized name ONLY if the repo has no Vercel deploy yet
+  for (const vp of allVercel) {
+    const uniqueKey = `${vp.sourceKey}:${vp.id}`;
+    if (matchedVercelKeys.has(uniqueKey)) continue;
+
+    const matchingRepos = allRepos.filter(
+      (r) => normalizeName(r.name) === normalizeName(vp.name)
+    );
+    const unattachedTargets = matchingRepos.filter(
+      (r) => r.deployments.length === 0
+    );
+
+    if (unattachedTargets.length > 0) {
+      matchedVercelKeys.add(uniqueKey);
+      for (const target of unattachedTargets) {
+        attachVercelToRepo(target, vp);
       }
-      if (!target.vercel_accounts.includes(vp.accountLabel)) {
-        target.vercel_accounts = [...target.vercel_accounts, vp.accountLabel];
+    } else if (
+      matchingRepos.length > 0 &&
+      vp.deployUrl &&
+      vp.deployStatus === "READY"
+    ) {
+      // If the repo already has an explicit link that failed (ERROR), update the repo's primary URL to the READY one while STILL keeping the standalone Vercel app visible
+      for (const target of matchingRepos) {
+        if (target.last_deploy_status !== "READY") {
+          target.deploy_url = vp.deployUrl;
+          target.last_deploy_status = "READY";
+          if (target.state !== "archived") target.state = "online";
+        }
+      }
+    }
+  }
+
+  // Pass 3: Propagate online deploy URL between mirror repositories (e.g., GitHub <-> GitLab with identical normalized name)
+  for (const repo of allRepos) {
+    if (repo.deploy_url) continue;
+    const donor = allRepos.find(
+      (other) =>
+        other !== repo &&
+        normalizeName(other.name) === normalizeName(repo.name) &&
+        Boolean(other.deploy_url)
+    );
+    if (donor) {
+      repo.deploy_url = donor.deploy_url;
+      if (repo.state !== "archived") repo.state = "online";
+      if (!repo.last_deploy_status && donor.last_deploy_status) {
+        repo.last_deploy_status = donor.last_deploy_status;
+      }
+      if (repo.vercel_accounts.length === 0 && donor.vercel_accounts.length > 0) {
+        repo.vercel_accounts = [...donor.vercel_accounts];
+      }
+      if (repo.deployments.length === 0 && donor.deployments.length > 0) {
+        repo.deployments = [...donor.deployments];
       }
     }
   }
@@ -639,7 +734,7 @@ export async function runFullSync() {
       repo_url: "",
       deploy_url: vp.deployUrl,
       state: vp.deployUrl ? "online" : "dev",
-      visibility: "private",
+      visibility: vp.deployUrl ? "public" : "private",
       default_branch: "main",
       stars: 0,
       forks: 0,

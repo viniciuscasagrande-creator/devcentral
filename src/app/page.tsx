@@ -595,11 +595,7 @@ export default function DevCentralDashboard() {
               handleSignIn();
               return;
             }
-            if (integrationStatus?.requiresSyncKey) {
-              setSyncKeyModalOpen(true);
-            } else {
-              executeSync();
-            }
+            executeSync();
           }}
           onNewProjectClick={() => (signedUser ? openModal() : handleSignIn())}
           onTabChange={setActiveTab}

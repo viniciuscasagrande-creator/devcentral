@@ -67,6 +67,9 @@ export async function POST(req: NextRequest) {
       title,
       priority,
       status,
+      assignee: body.assignee ? String(body.assignee) : "Admin",
+      dueDate: body.dueDate ? String(body.dueDate) : "",
+      checklist: Array.isArray(body.checklist) ? body.checklist : [],
       notes: body.notes ? String(body.notes) : "",
       issueUrl: body.issueUrl ? String(body.issueUrl) : "",
     });

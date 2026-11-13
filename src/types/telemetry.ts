@@ -10,6 +10,12 @@ export interface ProposedCodeChange {
   snippet: string;
 }
 
+export interface TaskChecklistItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
 export interface ProjectTask {
   id: string;
   projectId: string | null;
@@ -18,10 +24,58 @@ export interface ProjectTask {
   title: string;
   priority: TaskPriority;
   status: TaskStatus;
+  assignee?: string | null;
+  dueDate?: string | null;
+  checklist?: TaskChecklistItem[];
   notes?: string | null;
   issueUrl?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProjectOperationalInspection {
+  projectId: string;
+  projectName: string;
+  inspectedAt: string;
+  readOnly: true;
+  httpCheck: {
+    checkedUrl: string;
+    online: boolean;
+    statusCode: number | null;
+    latencyMs: number | null;
+    message: string;
+  };
+  commits: {
+    sha: string;
+    message: string;
+    author: string;
+    date: string;
+    url: string;
+  }[];
+  deployments: {
+    id: string;
+    account: string;
+    url: string;
+    state: string;
+    createdAt: string;
+    target: string;
+    inspectorUrl: string;
+    errorMessage?: string;
+  }[];
+  buildLogs: {
+    timestamp: string;
+    level: "info" | "warn" | "error";
+    text: string;
+    source: string;
+  }[];
+  verification: {
+    previousDeployStatus: string;
+    currentDeployStatus: string;
+    previousState: string;
+    currentState: string;
+    canCloseAlert: boolean;
+    summary: string;
+  };
 }
 
 export interface TelemetryRecommendation {

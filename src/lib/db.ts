@@ -89,12 +89,18 @@ export async function ensureSchema() {
       title TEXT NOT NULL,
       priority TEXT NOT NULL DEFAULT 'medium',
       status TEXT NOT NULL DEFAULT 'todo',
+      assignee TEXT DEFAULT 'Admin',
+      due_date TEXT DEFAULT '',
+      checklist JSONB DEFAULT '[]'::jsonb,
       notes TEXT DEFAULT '',
       issue_url TEXT DEFAULT '',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `;
+  await sql`ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS assignee TEXT DEFAULT 'Admin'`;
+  await sql`ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS due_date TEXT DEFAULT ''`;
+  await sql`ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS checklist JSONB DEFAULT '[]'::jsonb`;
   initialized = true;
 }
 
@@ -235,6 +241,9 @@ export async function listProjectTasks(projectId?: string): Promise<ProjectTask[
     status: (["todo", "in_progress", "done"].includes(String(r.status))
       ? r.status
       : "todo") as TaskStatus,
+    assignee: r.assignee ? String(r.assignee) : "Admin",
+    dueDate: r.due_date ? String(r.due_date) : "",
+    checklist: Array.isArray(r.checklist) ? r.checklist : [],
     notes: r.notes ? String(r.notes) : "",
     issueUrl: r.issue_url ? String(r.issue_url) : "",
     createdAt: r.created_at
@@ -254,14 +263,20 @@ export async function upsertProjectTask(input: {
   title: string;
   priority: TaskPriority;
   status: TaskStatus;
+  assignee?: string | null;
+  dueDate?: string | null;
+  checklist?: any[];
   notes?: string | null;
   issueUrl?: string | null;
 }): Promise<ProjectTask> {
   await ensureSchema();
   const sql = getSql();
+  const checklistJson = JSON.stringify(
+    Array.isArray(input.checklist) ? input.checklist : []
+  );
   const rows = await sql`
     INSERT INTO project_tasks (
-      id, project_id, project_name, recommendation_id, title, priority, status, notes, issue_url, updated_at
+      id, project_id, project_name, recommendation_id, title, priority, status, assignee, due_date, checklist, notes, issue_url, updated_at
     ) VALUES (
       ${input.id},
       ${input.projectId || null},
@@ -270,6 +285,9 @@ export async function upsertProjectTask(input: {
       ${input.title},
       ${input.priority},
       ${input.status},
+      ${input.assignee || "Admin"},
+      ${input.dueDate || ""},
+      ${checklistJson}::jsonb,
       ${input.notes || ""},
       ${input.issueUrl || ""},
       NOW()
@@ -281,6 +299,9 @@ export async function upsertProjectTask(input: {
       title = EXCLUDED.title,
       priority = EXCLUDED.priority,
       status = EXCLUDED.status,
+      assignee = EXCLUDED.assignee,
+      due_date = EXCLUDED.due_date,
+      checklist = EXCLUDED.checklist,
       notes = EXCLUDED.notes,
       issue_url = EXCLUDED.issue_url,
       updated_at = NOW()
@@ -295,6 +316,9 @@ export async function upsertProjectTask(input: {
     title: String(r.title || ""),
     priority: r.priority as TaskPriority,
     status: r.status as TaskStatus,
+    assignee: r.assignee ? String(r.assignee) : "Admin",
+    dueDate: r.due_date ? String(r.due_date) : "",
+    checklist: Array.isArray(r.checklist) ? r.checklist : [],
     notes: r.notes ? String(r.notes) : "",
     issueUrl: r.issue_url ? String(r.issue_url) : "",
     createdAt: new Date(r.created_at).toISOString(),

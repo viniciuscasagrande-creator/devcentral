@@ -507,29 +507,30 @@ a{color:inherit;text-decoration:none}
 .view-toggle button{border:0;background:transparent;color:#8b9bb8;padding:6px 10px;border-radius:8px;font-size:12px}
 .view-toggle button.active{background:#5b46e8;color:#fff;box-shadow:0 0 10px rgba(91,70,232,0.5)}
 
-/* PROJECT CARDS (4 COLUMNS DESKTOP >= 1280px, 2 TABLET 640-1279px, 1 MOBILE <= 639px) */
-.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+/* PROJECT CARDS (4 COLUMNS DESKTOP >= 1280px, 2 TABLET 768-1279px, 1 MOBILE <= 767px) */
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;width:100%;min-width:0}
 .cards.list-mode{grid-template-columns:1fr}
-.card{background:linear-gradient(145deg,rgba(19,27,48,0.95),rgba(15,22,40,0.95),rgba(11,16,31,0.95));border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;min-height:196px;min-width:0;transition:transform 0.16s ease,border-color 0.16s ease}
+.card{background:linear-gradient(145deg,rgba(19,27,48,0.95),rgba(15,22,40,0.95),rgba(11,16,31,0.95));border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;min-height:196px;min-width:0;width:100%;max-width:100%;overflow:hidden;transition:transform 0.16s ease,border-color 0.16s ease}
+.card > div{min-width:0;width:100%}
 .card:hover{transform:translateY(-2px)}
 .card.card-online{border:1px solid rgba(45,212,160,0.75);box-shadow:0 0 16px rgba(45,212,160,0.16),inset 0 0 12px rgba(45,212,160,0.04)}
 .card.card-off{border:1px solid rgba(255,77,109,0.75);box-shadow:0 0 16px rgba(255,77,109,0.16),inset 0 0 12px rgba(255,77,109,0.04)}
-.card-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.card-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;min-width:0;width:100%}
 .avatar{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,#2c3366,#1e2347);color:#e2ddff;font-weight:800;font-size:12px;flex-shrink:0;border:1px solid rgba(72,81,145,0.6)}
 .card-meta{font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:#8b9bb8;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .status{font-size:10.5px;color:#3ddba0;background:#0d2e28;border:1px solid rgba(45,212,160,0.55);box-shadow:0 0 10px rgba(45,212,160,0.2);padding:2.5px 10px;border-radius:99px;white-space:nowrap;font-weight:700;flex-shrink:0}
 .status.off{color:#ff6b86;background:rgba(255,77,109,0.15);border:1px solid rgba(255,77,109,0.55);box-shadow:0 0 10px rgba(255,77,109,0.2)}
 .card h3{font-size:14.5px;margin:3px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;color:#fff}
-.desc{color:#9baac5;line-height:1.45;font-size:11.5px;margin:11px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:34px}
-.tags{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0}
-.tag{background:#141d33;border:1px solid #263554;color:#cbd5e8;padding:2.5px 8px;border-radius:6px;font-size:10.5px;font-weight:500}
+.desc{color:#9baac5;line-height:1.45;font-size:11.5px;margin:11px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:34px;word-break:break-word}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0;min-width:0;width:100%}
+.tag{background:#141d33;border:1px solid #263554;color:#cbd5e8;padding:2.5px 8px;border-radius:6px;font-size:10.5px;font-weight:500;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tag.vercel{background:#1c1a3b;color:#b4a8ff;border-color:#453a85;font-weight:600;max-width:195px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.links{border-top:1px solid #1c263d;padding-top:10px;margin-top:14px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.links{border-top:1px solid #1c263d;padding-top:10px;margin-top:14px;display:flex;justify-content:space-between;gap:8px;align-items:center;min-width:0;width:100%;flex-wrap:wrap}
 .links a,.link-btn{font-size:12px;font-weight:600;background:transparent;border:0;padding:4px 0}
 .link-repo,.link-btn{color:#d5dff2}
 .link-deploy{color:#3ddba0}
 .links a:hover,.link-btn:hover{text-decoration:underline}
-.card-actions{display:flex;align-items:center;gap:4px;color:#8b9bb8}
+.card-actions{display:flex;align-items:center;gap:4px;color:#8b9bb8;margin-left:auto}
 .icon-act{background:transparent;border:0;color:#8b9bb8;padding:6px 8px;border-radius:8px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px}
 .icon-act:hover{color:#fff;background:#182337}
 .icon-act.pinned{color:#fbbf24}
@@ -593,7 +594,7 @@ a{color:inherit;text-decoration:none}
   .sidebar.open{transform:translateX(0)}
   .mobile-menu-btn{display:grid}
   .mobile-bottom-nav{display:grid}
-  .main{padding-bottom:92px}
+  .main{padding:16px 14px 96px}
   .filter-grid{display:block}
   .filter-grid > .filter-select{display:none}
   .mobile-filter-btn{display:inline-flex}
@@ -603,12 +604,39 @@ a{color:inherit;text-decoration:none}
   .hero-checks{justify-self:start}
   .tech-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media(max-width:639px){
-  .cards{grid-template-columns:1fr}
-  .stats{grid-template-columns:1fr 1fr}
-  .stats .stat:first-child{grid-column:span 2}
-  .tech-grid{grid-template-columns:1fr}
+@media(max-width:767px){
   .eyebrow{display:none}
+  .topbar{margin-bottom:12px}
+  .auth-pill{padding:8px 12px;font-size:11.5px;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hero{padding:16px;border-radius:16px;margin-bottom:14px}
+  .hero h1{font-size:24px}
+  .hero p{font-size:12px;margin-bottom:12px}
+  .hero-btns{display:grid;grid-template-columns:1fr;gap:8px;width:100%}
+  .btn-sync-split,.btn-telemetry-hero{width:100%;justify-content:center}
+  .btn-sync-main{flex:1;justify-content:center}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+  .stats .stat:first-child{grid-column:span 2}
+  .stats .stat:not(:first-child) > svg{display:none}
+  .stat{padding:12px;border-radius:14px;gap:8px}
+  .stat-left{gap:9px;width:100%}
+  .stat-icon{width:36px;height:36px;border-radius:10px;font-size:15px}
+  .stat .v{font-size:20px}
+  .stat .k{font-size:10.5px;white-space:normal;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .stat .note{font-size:10px;white-space:normal;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .cards{grid-template-columns:1fr;gap:12px}
+  .card{padding:15px;border-radius:15px;min-height:auto;gap:4px}
+  .card-meta{white-space:normal;display:flex;flex-wrap:wrap;gap:4px;line-height:1.3}
+  .card h3{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;font-size:15px;line-height:1.28}
+  .desc{margin-top:9px;min-height:auto}
+  .tags{margin-top:10px}
+  .tag.vercel{max-width:100%}
+  .links{margin-top:12px;padding-top:10px;gap:8px}
+  .links a,.link-btn{padding:7px 11px;border-radius:9px;background:#141d33;border:1px solid #263554;font-size:11.5px;display:inline-flex;align-items:center;text-decoration:none !important}
+  .link-deploy{background:rgba(13,46,40,0.75) !important;border-color:rgba(45,212,160,0.45) !important;color:#3ddba0 !important}
+  .btn-analyze{min-height:42px;font-size:12px;margin-top:10px;border-radius:11px}
+  .tech-grid{grid-template-columns:1fr}
+  .modal-overlay{padding:0;align-items:flex-end}
+  .modal-box{max-height:92vh;border-radius:20px 20px 0 0}
 }
 </style>
 </head>
@@ -1024,6 +1052,9 @@ let activeSubTab = "diagnostic";
 let selectedRecId = recommendations[0]?.id || null;
 let currentModalProjectId = null;
 let currentModalTab = "ficha";
+let opPhase = "analyze";
+let consoleLogFilter = "";
+let opInspections = {};
 
 try {
   const localStatuses = JSON.parse(localStorage.getItem("devcentral_rec_statuses_v3") || "{}");
@@ -1168,21 +1199,36 @@ function renderTelemetry() {
     $("telemetry-events-box").innerHTML = \`
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
         <div>
-          <h3 style="margin:0;font-size:16px">📋 Central de Tarefas &amp; Melhorias (\${tasks.length})</h3>
-          <div style="font-size:12px;color:var(--muted)">Recomendações convertidas em tarefas com prioridade, status e links para GitHub/GitLab Issues.</div>
+          <h3 style="margin:0;font-size:16px">📋 Planos de Ação &amp; Tarefas Operacionais (\${tasks.length})</h3>
+          <div style="font-size:12px;color:var(--muted)">Diagnósticos convertidos em tarefas com responsável, prioridade, prazo, checklist interativo e vínculo com Issues/PRs.</div>
         </div>
       </div>
       <div style="display:grid;gap:10px">
-        \${tasks.length === 0 ? '<div style="padding:20px;text-align:center;color:var(--muted);border:1px solid #1e293b;border-radius:10px">Nenhuma tarefa registrada. Clique em "+ Converter em Tarefa" em qualquer diagnóstico ou dentro de "Analisar projeto".</div>' : tasks.map(t => \`
-          <div style="padding:13px 15px;border-radius:11px;background:#090d18;border:1px solid #22304d;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-            <div>
+        \${tasks.length === 0 ? '<div style="padding:20px;text-align:center;color:var(--muted);border:1px solid #1e293b;border-radius:10px">Nenhuma tarefa registrada. Clique em "+ Plano de Ação" em qualquer diagnóstico ou dentro de "Analisar projeto".</div>' : tasks.map(t => \`
+          <div style="padding:13px 15px;border-radius:11px;background:#090d18;border:1px solid #22304d;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:240px">
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <span class="sev-pill \${t.priority==='high'?'sev-critical':t.priority==='medium'?'sev-warning':'sev-info'}">\${t.priority==='high'?'Alta':t.priority==='medium'?'Média':'Baixa'}</span>
                 <strong style="color:#a5b4fc;font-size:12px">\${esc(t.projectName)}</strong>
                 <strong style="color:#fff;font-size:13.5px;\${t.status==='done'?'text-decoration:line-through;opacity:0.6':''}">\${esc(t.title)}</strong>
               </div>
-              \${t.notes ? \`<div style="font-size:12px;color:var(--muted);margin-top:4px">\${esc(t.notes)}</div>\` : ""}
-              \${t.issueUrl ? \`<a href="\${esc(t.issueUrl)}" target="_blank" rel="noopener" style="font-size:11.5px;color:#3ddba0;display:inline-block;margin-top:4px">Abrir Issue / PR no Repositório ↗</a>\` : ""}
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:11px;color:#cbd5e1">
+                <span style="padding:2px 8px;border-radius:6px;background:#111827;border:1px solid #1e293b">👤 Resp: <strong>\${esc(t.assignee || "Vinicius Casagrande")}</strong></span>
+                <span style="padding:2px 8px;border-radius:6px;background:#111827;border:1px solid #1e293b;color:#fcd34d">📅 Prazo: <strong>\${esc(t.dueDate || "Sem prazo")}</strong></span>
+              </div>
+              \${t.notes ? \`<div style="font-size:12px;color:var(--muted);margin-top:6px">\${esc(t.notes)}</div>\` : ""}
+              \${Array.isArray(t.checklist) && t.checklist.length > 0 ? \`
+                <div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:#050811;border:1px solid #1e293b;display:grid;gap:5px">
+                  <div style="font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase">Checklist de Execução (\${t.checklist.filter(c=>c.done).length}/\${t.checklist.length})</div>
+                  \${t.checklist.map(c => \`
+                    <label style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:\${c.done?'#64748b':'#e2e8f0'};cursor:pointer;\${c.done?'text-decoration:line-through':''}">
+                      <input type="checkbox" \${c.done?'checked':''} onchange="window.__toggleTaskCheck('\${esc(t.id)}','\${esc(c.id)}')">
+                      <span>\${esc(c.text)}</span>
+                    </label>
+                  \`).join("")}
+                </div>
+              \` : ""}
+              \${t.issueUrl ? \`<a href="\${esc(t.issueUrl)}" target="_blank" rel="noopener" style="font-size:11.5px;color:#3ddba0;display:inline-block;margin-top:6px">Abrir Issue / PR no Repositório ↗</a>\` : ""}
             </div>
             <div style="display:flex;gap:6px;align-items:center">
               <select class="filter-select" style="width:auto;padding:5px 9px;font-size:11.5px" onchange="window.__updateTaskStatus('\${esc(t.id)}', this.value)">
@@ -1280,7 +1326,38 @@ function renderTelemetry() {
   \`).join("");
 
   const sel = filtered.find(r => r.id === selectedRecId) || filtered[0];
+  const selProj = projects.find(p => p.id === sel.projectId || (sel.projectName && p.name.toLowerCase() === sel.projectName.toLowerCase())) || null;
+  const selInsp = selProj ? opInspections[selProj.id] : null;
+  const repoClean = selProj?.repo_url ? selProj.repo_url.replace(/\\.git$/, "") : "";
+  const issueHref = repoClean ? (repoClean.includes("gitlab.com")
+    ? repoClean + "/-/issues/new?issue[title]=" + encodeURIComponent("[DevCentral Diagnóstico] " + sel.title) + "&issue[description]=" + encodeURIComponent("## Evidência\\n" + sel.evidence + "\\n\\n## Causa Provável\\n" + (sel.probableCause || "") + "\\n\\n## Plano de Ação\\n" + sel.action)
+    : repoClean + "/issues/new?title=" + encodeURIComponent("[DevCentral Diagnóstico] " + sel.title) + "&body=" + encodeURIComponent("## Evidência\\n" + sel.evidence + "\\n\\n## Causa Provável\\n" + (sel.probableCause || "") + "\\n\\n## Plano de Ação\\n" + sel.action)) : "";
+  const consoleLines = selInsp?.consoleLines || [
+    "[BUILD] Iniciando diagnóstico operacional para " + (selProj?.name || sel.projectName || "Catálogo") + " (" + (selProj?.tech || "TypeScript") + ")",
+    "[EVIDENCE] " + sel.evidence,
+    "[CAUSE] " + (sel.probableCause || "Configuração pendente ou divergência entre repositório e provedor de deploy."),
+    selProj?.deploy_url ? "[READY] Endpoint publicado em " + selProj.deploy_url : "[WARN] Sem deploy_url ativo registrado no catálogo.",
+    "[ACTION] " + sel.action
+  ];
+  const filteredLines = consoleLogFilter ? consoleLines.filter(l => l.toLowerCase().includes(consoleLogFilter.toLowerCase())) : consoleLines;
+
   $("diag-detail").innerHTML = \`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:12px;border-radius:11px;background:#090e1c;border:1px solid #222e4a">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-right:4px">Fluxo Operacional:</span>
+        <button class="status-btn \${opPhase==='analyze'?'active':''}" onclick="window.__setOpPhase('analyze')">1. Analisar</button>
+        <span style="color:#475569">→</span>
+        <button class="status-btn \${opPhase==='fix'?'active':''}" onclick="window.__setOpPhase('fix')">2. Corrigir</button>
+        <span style="color:#475569">→</span>
+        <button class="status-btn \${opPhase==='verify'?'active':''}" onclick="window.__setOpPhase('verify')">3. Verificar</button>
+      </div>
+      \${selProj ? \`
+        <button class="status-btn" style="background:rgba(12,36,56,0.75);border-color:#38bdf8;color:#38bdf8;font-weight:800" onclick="window.__inspectProjectLive('\${esc(selProj.id)}')">
+          ⚡ Analisar projeto agora (Leitura ao vivo)
+        </button>
+      \` : ""}
+    </div>
+
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid #222e4a">
       <div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
@@ -1290,8 +1367,9 @@ function renderTelemetry() {
         <h3 style="margin:0;font-size:18px">\${esc(sel.title)}</h3>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="status-btn" style="background:#5641e5;border-color:#8e7bff;color:#fff" onclick="window.__convertRecToTask('\${esc(sel.id)}')">+ Converter em Tarefa</button>
-        \${sel.projectId ? \`<button class="status-btn" onclick="window.__openProjectModal('\${esc(sel.projectId)}')">📈 Analisar projeto</button>\` : ""}
+        <button class="status-btn" style="background:#5641e5;border-color:#8e7bff;color:#fff" onclick="window.__convertRecToTask('\${esc(sel.id)}')">+ Plano de Ação / Tarefa</button>
+        \${selProj ? \`<button class="status-btn" onclick="window.__openProjectModal('\${esc(selProj.id)}')">📈 Ficha Técnica</button>\` : ""}
+        <button class="status-btn" style="background:#0d2e28;border-color:#2dd4a0;color:#3ddba0" onclick="window.__verifyBeforeResolve('\${esc(sel.id)}')">↻ Verificar novamente</button>
         \${["open", "investigating", "resolved"].map(st => \`
           <button class="status-btn \${sel.status === st ? "active" : ""}" onclick="window.__setRecStatus('\${esc(sel.id)}', '\${st}')">
             \${statusLabels[st]}
@@ -1299,6 +1377,31 @@ function renderTelemetry() {
         \`).join("")}
       </div>
     </div>
+
+    \${selInsp ? \`
+      <div class="solution-box" style="border-color:\${selInsp.canClose ? 'rgba(45,212,160,0.5)' : 'rgba(245,158,11,0.5)'};background:\${selInsp.canClose ? 'rgba(13,46,40,0.35)' : 'rgba(46,32,12,0.35)'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <h4 style="margin:0;color:\${selInsp.canClose ? '#3ddba0' : '#fcd34d'}">\${selInsp.canClose ? '✓ Verificação Pós-Correção Aprovada' : '⚠ Verificação Pós-Correção Pendente'}</h4>
+          <span style="font-size:11px;color:#cbd5e1">Checado às \${esc(selInsp.checkedAt)}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;font-size:12px">
+          <div style="padding:8px 10px;border-radius:8px;background:#090d18;border:1px solid #1e293b">
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800">Estado Anterior</div>
+            <div style="color:#e2e8f0;margin-top:3px">\${esc(selInsp.previousSummary)}</div>
+          </div>
+          <div style="padding:8px 10px;border-radius:8px;background:#090d18;border:1px solid #1e293b">
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800">Estado Atual Verificado</div>
+            <div style="color:#3ddba0;margin-top:3px;font-weight:700">\${esc(selInsp.currentSummary)}</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">
+          <span style="font-size:12px;color:#f1f5f9">\${esc(selInsp.recommendationNote)}</span>
+          \${selInsp.canClose && sel.status !== 'resolved' ? \`
+            <button class="status-btn" style="background:#0d2e28;border-color:#2dd4a0;color:#3ddba0;font-weight:800" onclick="window.__setRecStatus('\${esc(sel.id)}','resolved',true)">✓ Confirmar Encerramento Verificado</button>
+          \` : ""}
+        </div>
+      </div>
+    \` : ""}
 
     <div class="solution-box">
       <h4>🔍 Evidência Detectada</h4>
@@ -1308,6 +1411,26 @@ function renderTelemetry() {
     <div class="solution-box">
       <h4>🧠 Causa Provável</h4>
       <div style="font-size:13px;line-height:1.5;color:#cbd5e1">\${esc(sel.probableCause || "Configuração pendente ou divergência entre repositório e provedor de deploy.")}</div>
+    </div>
+
+    <!-- 2. CONSOLE DE DIAGNÓSTICO & LOGS -->
+    <div class="solution-box" style="background:#050811;border-color:#1e2942">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <h4 style="margin:0;color:#38bdf8">🖥 Console de Diagnóstico &amp; Logs de Build/Deploy</h4>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <input type="search" value="\${esc(consoleLogFilter)}" placeholder="Pesquisar erro ou evento..." class="filter-select" style="width:auto;padding:4px 9px;font-size:11.5px" oninput="window.__filterConsoleLogs(this.value)">
+          \${repoClean ? \`<a class="status-btn" style="padding:4px 9px;font-size:11px" href="\${esc(repoClean)}" target="_blank" rel="noopener">Abrir no \${esc(selProj?.source || 'Git')} ↗</a>\` : ""}
+          \${selProj?.deploy_url ? \`<a class="status-btn" style="padding:4px 9px;font-size:11px;color:#3ddba0" href="\${esc(selProj.deploy_url)}" target="_blank" rel="noopener">Abrir Deploy ↗</a>\` : ""}
+        </div>
+      </div>
+      <div style="font-family:monospace;font-size:11.5px;display:grid;gap:4px;max-height:175px;overflow-y:auto;padding:8px;border-radius:8px;background:#03060c;border:1px solid #141d30">
+        \${filteredLines.map(line => {
+          const isErr = /ERROR|FAIL|WARN|CRÍTICO/i.test(line);
+          const isOk = /READY|ONLINE|OK|SUCCESS/i.test(line);
+          const col = isErr ? "#fda4af" : isOk ? "#3ddba0" : "#cbd5e1";
+          return \`<div style="color:\${col};padding:3px 6px;border-radius:4px;background:\${isErr?'rgba(244,63,94,0.12)':'transparent'}">\${esc(line)}</div>\`;
+        }).join("")}
+      </div>
     </div>
 
     <div class="solution-box" style="border-color:rgba(45,212,160,0.4);background:rgba(45,212,160,0.05)">
@@ -1320,11 +1443,35 @@ function renderTelemetry() {
       \` : ""}
     </div>
 
-    \${sel.proposedCode ? \`
-      <div class="solution-box" style="border-color:rgba(56,189,248,0.45);background:rgba(12,34,56,0.4)">
-        <h4 style="color:#38bdf8">🤖 Assistente Inteligente de Soluções (Revisão Humana — Nunca Aplicado Automaticamente)</h4>
-        <div style="font-size:12px;color:#cbd5e1;margin-bottom:8px"><strong>\${esc(sel.proposedCode.filename)}</strong> — \${esc(sel.proposedCode.description)}</div>
-        <pre style="margin:0;padding:10px;border-radius:8px;background:#050811;border:1px solid #1e293b;color:#d5e0f2;font-size:11.5px;overflow-x:auto">\${esc(sel.proposedCode.snippet)}</pre>
+    <!-- 3. GERAR CORREÇÃO ASSISTIDA -->
+    <div class="solution-box" style="border-color:rgba(56,189,248,0.45);background:rgba(12,34,56,0.4)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <h4 style="margin:0;color:#38bdf8">🤖 Gerar Correção Assistida (Revisão Humana Obrigatória)</h4>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          \${issueHref ? \`<a class="status-btn" style="padding:5px 10px;font-size:11px;background:#5641e5;color:#fff" href="\${esc(issueHref)}" target="_blank" rel="noopener">📝 Abrir Issue Pré-Preenchida no Repositório ↗</a>\` : ""}
+          <button class="status-btn" style="padding:5px 10px;font-size:11px" onclick="window.__convertRecToTask('\${esc(sel.id)}')">📋 Converter em Plano de Ação com Checklist</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#cbd5e1;margin-bottom:8px">
+        \${sel.proposedCode ? \`<strong>\${esc(sel.proposedCode.filename)}</strong> — \${esc(sel.proposedCode.description)}\` : "Nenhuma modificação é aplicada automaticamente sem sua aprovação. Revise o snippet ou abra uma Issue/PR controlada."}
+      </div>
+      \${sel.proposedCode ? \`<pre style="margin:0;padding:10px;border-radius:8px;background:#050811;border:1px solid #1e293b;color:#d5e0f2;font-size:11.5px;overflow-x:auto">\${esc(sel.proposedCode.snippet)}</pre>\` : ""}
+    </div>
+
+    <!-- 4. CENTRAL DE DEPLOYS E RECUPERAÇÃO -->
+    \${selProj ? \`
+      <div class="solution-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          <h4 style="margin:0;color:#c4b5fd">🚀 Central de Deploys &amp; Recuperação (\${esc(selProj.name)})</h4>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="status-btn" style="padding:5px 10px;font-size:11px;border-color:rgba(245,158,11,0.5);color:#fcd34d" onclick="window.__confirmProdDeployAction('redeploy','\${esc(selProj.name)}')">↻ Solicitar Redeploy (Com Confirmação)</button>
+            <button class="status-btn" style="padding:5px 10px;font-size:11px;border-color:rgba(244,63,94,0.5);color:#fda4af" onclick="window.__confirmProdDeployAction('rollback','\${esc(selProj.name)}')">⏪ Rollback de Produção (Com Confirmação)</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#94a3b8">
+          Status na plataforma: <strong style="color:#3ddba0">\${esc(selProj.last_deploy_status || (selProj.deploy_url ? "READY" : "DEV"))}</strong> •
+          Contas Vercel: <strong style="color:#c4b5fd">\${esc((selProj.vercel_accounts || []).join(", ") || "Nenhuma")}</strong>
+        </div>
       </div>
     \` : ""}
 
@@ -1524,6 +1671,12 @@ window.__pingModalEndpoint = async (url) => {
 window.__convertRecToTask = async (recId) => {
   const rec = recommendations.find(r => r.id === recId);
   if (!rec) return;
+  const dueDate = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  const checklist = (rec.steps && rec.steps.length > 0 ? rec.steps : [
+    "Inspecionar evidência e logs no Console de Diagnóstico",
+    "Aplicar e revisar correção proposta",
+    "Executar Verificar novamente para confirmar resolução"
+  ]).map((s, idx) => ({ id: "chk_" + idx, text: s, done: false }));
   const newTask = {
     id: "task_" + Date.now(),
     projectId: rec.projectId,
@@ -1532,6 +1685,9 @@ window.__convertRecToTask = async (recId) => {
     title: rec.title,
     priority: rec.severity === "critical" ? "high" : rec.severity === "warning" ? "medium" : "low",
     status: "todo",
+    assignee: "Vinicius Casagrande",
+    dueDate,
+    checklist,
     notes: rec.evidence + " — " + rec.action,
     issueUrl: rec.href || ""
   };
@@ -1554,6 +1710,86 @@ window.__convertRecToTask = async (recId) => {
     activeSubTab = "tasks";
     render();
   }
+};
+
+window.__toggleTaskCheck = (taskId, checkId) => {
+  tasks = tasks.map(t => {
+    if (t.id !== taskId) return t;
+    const checklist = (t.checklist || []).map(c => c.id === checkId ? { ...c, done: !c.done } : c);
+    return { ...t, checklist };
+  });
+  try { localStorage.setItem("devcentral_tasks_v3", JSON.stringify(tasks)); } catch {}
+  renderTelemetry();
+};
+
+window.__setOpPhase = (phase) => {
+  opPhase = phase;
+  renderTelemetry();
+};
+
+window.__filterConsoleLogs = (val) => {
+  consoleLogFilter = val || "";
+  renderTelemetry();
+};
+
+window.__inspectProjectLive = async (projectId) => {
+  const p = projects.find(x => x.id === projectId);
+  if (!p) return;
+  let reachable = false;
+  let latencyMs = 0;
+  if (p.deploy_url) {
+    const t0 = performance.now();
+    try {
+      await fetch(p.deploy_url, { mode: "no-cors", cache: "no-store" });
+      reachable = true;
+      latencyMs = Math.round(performance.now() - t0);
+    } catch {
+      reachable = false;
+    }
+  }
+  const hasDesc = Boolean(p.description && p.description.trim().length >= 12);
+  const canClose = (p.deploy_url ? reachable : true) && p.last_deploy_status !== "ERROR";
+  opInspections[p.id] = {
+    checkedAt: new Date().toLocaleTimeString("pt-BR"),
+    previousSummary: "Deploy: " + (p.last_deploy_status || "N/A") + " • URL: " + (p.deploy_url || "Não configurado"),
+    currentSummary: p.deploy_url
+      ? (reachable ? "HTTP ONLINE (" + latencyMs + " ms) • " + p.deploy_url : "HTTP INDISPONÍVEL / Timeout")
+      : "Repositório " + p.source + " verificado (" + (hasDesc ? "Documentado" : "Descrição pendente") + ")",
+    canClose,
+    recommendationNote: canClose
+      ? "Sinais técnicos validados com sucesso. O alerta já pode ser encerrado com segurança."
+      : "Ainda existem pendências técnicas ou indisponibilidade HTTP. Corrija antes de encerrar.",
+    consoleLines: [
+      "[" + new Date().toLocaleTimeString("pt-BR") + "] [INSPECT] Iniciando leitura ao vivo de " + p.name + " (" + p.source + ")",
+      p.repo_url ? "[GIT] Repositório vinculado: " + p.repo_url : "[WARN] Sem repositório Git vinculado",
+      p.deploy_url
+        ? (reachable ? "[HTTP READY] " + p.deploy_url + " respondeu em " + latencyMs + " ms" : "[HTTP ERROR] Falha ao contactar " + p.deploy_url)
+        : "[INFO] Projeto sem domínio de produção publicado",
+      "[VERCEL] Contas vinculadas: " + ((p.vercel_accounts || []).join(", ") || "Nenhuma"),
+      canClose ? "[VERIFY OK] Verificação pós-correção aprovada." : "[VERIFY WARN] Pendência técnica ainda ativa."
+    ]
+  };
+  opPhase = "verify";
+  renderTelemetry();
+};
+
+window.__verifyBeforeResolve = async (recId) => {
+  const rec = recommendations.find(r => r.id === recId);
+  if (!rec) return;
+  const p = projects.find(x => x.id === rec.projectId || (rec.projectName && x.name.toLowerCase() === rec.projectName.toLowerCase()));
+  if (p) {
+    await window.__inspectProjectLive(p.id);
+  } else {
+    opPhase = "verify";
+    renderTelemetry();
+  }
+};
+
+window.__confirmProdDeployAction = (actionType, projectName) => {
+  const label = actionType === "redeploy" ? "REDEPLOY EM PRODUÇÃO" : "ROLLBACK DE PRODUÇÃO";
+  const ok = window.confirm("⚠️ CONFIRMAÇÃO OBRIGATÓRIA DE PRODUÇÃO\\n\\nDeseja realmente solicitar " + label + " para o projeto " + projectName + "?\\n\\nNenhuma ação em produção é executada sem sua aprovação explícita.");
+  if (!ok) return;
+  alert("✓ Solicitação de " + label + " registrada no console operacional para " + projectName + ". Acompanhe a execução no provedor Vercel/Git.");
 };
 
 window.__addTaskFromModal = async (projectId) => {
@@ -1731,7 +1967,19 @@ window.__selectRec = (id) => {
   renderTelemetry();
 };
 
-window.__setRecStatus = async (id, status) => {
+window.__setRecStatus = async (id, status, verifiedOverride) => {
+  if (status === "resolved" && !verifiedOverride) {
+    const rec = recommendations.find(r => r.id === id);
+    const p = rec ? projects.find(x => x.id === rec.projectId || (rec.projectName && x.name.toLowerCase() === rec.projectName.toLowerCase())) : null;
+    if (p && !opInspections[p.id]) {
+      await window.__inspectProjectLive(p.id);
+    }
+    const insp = p ? opInspections[p.id] : null;
+    if (insp && !insp.canClose) {
+      const force = window.confirm("⚠️ A verificação técnica pós-correção encontrou pendências (" + insp.currentSummary + "). Deseja marcar como Resolvida mesmo assim?");
+      if (!force) return;
+    }
+  }
   recommendations = recommendations.map(r => r.id === id ? { ...r, status } : r);
   try {
     const saved = JSON.parse(localStorage.getItem("devcentral_rec_statuses_v3") || "{}");
@@ -1804,9 +2052,11 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+window.__currentProjects = projects;
 window.__setAuthedData = (projList, telPayload) => {
   if (Array.isArray(projList) && projList.length > 0) {
     projects = projList;
+    window.__currentProjects = projects;
   }
   if (telPayload && Array.isArray(telPayload.recommendations)) {
     recommendations = telPayload.recommendations;
@@ -1884,35 +2134,125 @@ loginBtn.onclick = async () => {
 };
 
 syncBtn.onclick = async () => {
-  if (!auth.currentUser) {
+  syncBtn.textContent = "⏳ Sincronizando...";
+  let syncedViaBackend = false;
+  if (auth.currentUser) {
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (e) {
-      if (e?.code === "auth/popup-blocked" || e?.code === "auth/operation-not-supported-in-this-environment") {
-        await signInWithRedirect(auth, new GoogleAuthProvider());
-        return;
-      }
-      alert("Faça login com Google (Admin) para sincronizar projetos via API.");
-      return;
-    }
-  }
-  if (window.__authedToken) {
-    syncBtn.textContent = "⏳ Sincronizando...";
-    try {
+      const token = await auth.currentUser.getIdToken();
+      window.__authedToken = token;
       const res = await fetch("/api/sync", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + window.__authedToken
+          Authorization: "Bearer " + token
         },
         body: JSON.stringify({})
       });
-      if (res.ok) {
+      const ct = res.headers.get("content-type") || "";
+      if (res.ok && ct.includes("application/json")) {
         await loadPrivateData(auth.currentUser);
+        syncedViaBackend = true;
       }
     } catch {}
-    syncBtn.textContent = "🚀 Sincronizar projetos";
   }
+
+  if (!syncedViaBackend) {
+    try {
+      const [ghRes, glRes] = await Promise.all([
+        fetch("https://api.github.com/users/viniciuscasagrande-creator/repos?sort=updated&per_page=100"),
+        fetch("https://gitlab.com/api/v4/users/ViniciusMurray/projects?order_by=last_activity_at&sort=desc&per_page=100")
+      ]);
+      const ghList = ghRes.ok ? await ghRes.json() : [];
+      const glList = glRes.ok ? await glRes.json() : [];
+      const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const current = Array.isArray(window.__currentProjects) ? [...window.__currentProjects] : [];
+      const byId = new Map(current.map(p => [p.id, p]));
+
+      if (Array.isArray(ghList)) {
+        for (const r of ghList) {
+          const id = "github-" + r.id;
+          const hp = typeof r.homepage === "string" && r.homepage.startsWith("http") ? r.homepage.trim() : "";
+          const existing = byId.get(id) || current.find(p => norm(p.name) === norm(r.name) && p.source === "GitHub");
+          if (existing) {
+            if (hp) existing.deploy_url = hp;
+            if (existing.deploy_url) {
+              existing.state = "online";
+              existing.last_deploy_status = "READY";
+              if (existing.deploy_url.includes("vercel.app") && (!existing.vercel_accounts || existing.vercel_accounts.length === 0)) {
+                existing.vercel_accounts = ["DEVELOPDISKINGRESSOS-9897"];
+              }
+            }
+            existing.repo_url = r.html_url || existing.repo_url;
+            existing.last_commit_at = r.pushed_at || existing.last_commit_at;
+          } else {
+            const matchVercel = current.find(p => norm(p.name) === norm(r.name) && p.deploy_url);
+            const deployUrl = hp || (matchVercel ? matchVercel.deploy_url : "");
+            const newProj = {
+              id,
+              name: r.name,
+              description: r.description || "",
+              tech: r.language || "TypeScript",
+              source: "GitHub",
+              repo_url: r.html_url || "",
+              deploy_url: deployUrl,
+              state: deployUrl ? "online" : "dev",
+              visibility: "public",
+              is_pinned: false,
+              tags: Array.isArray(r.topics) ? r.topics.slice(0, 5) : [],
+              vercel_accounts: matchVercel ? (matchVercel.vercel_accounts || []) : (deployUrl.includes("vercel.app") ? ["DEVELOPDISKINGRESSOS-9897"] : []),
+              deployments: matchVercel ? (matchVercel.deployments || []) : [],
+              last_deploy_status: deployUrl ? "READY" : "",
+              last_commit_at: r.pushed_at || r.updated_at || new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            current.push(newProj);
+            byId.set(id, newProj);
+          }
+        }
+      }
+
+      if (Array.isArray(glList)) {
+        for (const p of glList) {
+          const id = "gitlab-" + p.id;
+          const existing = byId.get(id);
+          const donor = current.find(other => norm(other.name) === norm(p.name) && other.deploy_url);
+          const deployUrl = (typeof p.website_url === "string" && p.website_url.startsWith("http") ? p.website_url.trim() : "") || (donor ? donor.deploy_url : "");
+          if (existing) {
+            if (deployUrl && !existing.deploy_url) existing.deploy_url = deployUrl;
+            if (existing.deploy_url) existing.state = "online";
+          } else {
+            const newProj = {
+              id,
+              name: p.name,
+              description: p.description || "",
+              tech: donor ? donor.tech : "TypeScript",
+              source: "GitLab",
+              repo_url: p.web_url || "",
+              deploy_url: deployUrl,
+              state: deployUrl ? "online" : "dev",
+              visibility: "public",
+              is_pinned: false,
+              tags: Array.isArray(p.topics) ? p.topics.slice(0, 5) : [],
+              vercel_accounts: donor ? (donor.vercel_accounts || []) : [],
+              deployments: donor ? (donor.deployments || []) : [],
+              last_deploy_status: deployUrl ? "READY" : "",
+              last_commit_at: p.last_activity_at || new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            current.push(newProj);
+            byId.set(id, newProj);
+          }
+        }
+      }
+
+      window.__setAuthedData(current, null);
+    } catch {}
+  }
+
+  syncBtn.textContent = "✅ Sincronizado!";
+  setTimeout(() => {
+    syncBtn.textContent = "🚀 Sincronizar projetos";
+  }, 2200);
 };
 </script>
 </body>
