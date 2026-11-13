@@ -271,6 +271,79 @@ const initialRecs = buildPublicRecommendations(
   safeLogs[0]?.synced_at || null
 );
 
+// Sincroniza e carrega operational_alerts no Neon PostgreSQL
+await sql`
+  CREATE TABLE IF NOT EXISTS operational_alerts (
+    id TEXT PRIMARY KEY,
+    project_id TEXT,
+    project_name TEXT NOT NULL,
+    title TEXT NOT NULL,
+    evidence TEXT NOT NULL DEFAULT '',
+    severity TEXT NOT NULL CHECK (severity IN ('critical', 'warning')),
+    state TEXT NOT NULL DEFAULT 'active' CHECK (state IN ('active', 'recovered')),
+    read_at TIMESTAMPTZ,
+    first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    recovered_at TIMESTAMPTZ,
+    occurrences INTEGER NOT NULL DEFAULT 1
+  )
+`;
+await sql`CREATE INDEX IF NOT EXISTS operational_alerts_state_idx ON operational_alerts (state, last_seen_at DESC)`;
+
+const confirmedActiveRecs = initialRecs.filter(
+  (r) =>
+    r.kind === "confirmed_issue" &&
+    (r.severity === "critical" || r.severity === "warning") &&
+    r.status !== "resolved"
+);
+const buildScanStart = new Date().toISOString();
+for (const r of confirmedActiveRecs) {
+  await sql`
+    INSERT INTO operational_alerts
+      (id, project_id, project_name, title, evidence, severity, first_seen_at, last_seen_at)
+    VALUES
+      (${r.id}, ${r.projectId}, ${r.projectName || "Sistema"}, ${r.title},
+       ${String(r.evidence || "").slice(0, 2000)}, ${r.severity}, NOW(), NOW())
+    ON CONFLICT (id) DO UPDATE SET
+      project_id = EXCLUDED.project_id,
+      project_name = EXCLUDED.project_name,
+      title = EXCLUDED.title,
+      evidence = EXCLUDED.evidence,
+      severity = EXCLUDED.severity,
+      state = 'active',
+      read_at = CASE WHEN operational_alerts.state = 'recovered' THEN NULL ELSE operational_alerts.read_at END,
+      recovered_at = NULL,
+      last_seen_at = NOW(),
+      occurrences = operational_alerts.occurrences + 1
+  `;
+}
+await sql`
+  UPDATE operational_alerts SET state = 'recovered', recovered_at = NOW()
+  WHERE state = 'active' AND last_seen_at < ${buildScanStart}::timestamptz
+`;
+const alertRows = await sql`
+  SELECT * FROM operational_alerts
+  ORDER BY CASE WHEN state = 'active' THEN 0 ELSE 1 END,
+           CASE severity WHEN 'critical' THEN 0 ELSE 1 END,
+           last_seen_at DESC
+  LIMIT 100
+`;
+const initialAlerts = alertRows.map((r) => ({
+  id: String(r.id),
+  projectId: r.project_id == null ? null : String(r.project_id),
+  projectName: String(r.project_name),
+  title: String(r.title),
+  evidence: String(r.evidence),
+  severity: String(r.severity),
+  state: String(r.state),
+  readAt: r.read_at ? new Date(String(r.read_at)).toISOString() : null,
+  firstSeenAt: r.first_seen_at ? new Date(String(r.first_seen_at)).toISOString() : new Date().toISOString(),
+  lastSeenAt: r.last_seen_at ? new Date(String(r.last_seen_at)).toISOString() : new Date().toISOString(),
+  recoveredAt: r.recovered_at ? new Date(String(r.recovered_at)).toISOString() : null,
+  occurrences: Number(r.occurrences || 1),
+}));
+const initialUnreadAlerts = initialAlerts.filter((a) => a.state === "active" && !a.readAt).length;
+
 const esc = (s) =>
   String(s ?? "").replace(
     /[&<>"']/g,
@@ -745,11 +818,28 @@ a{color:inherit;text-decoration:none}
         <button class="mobile-menu-btn" onclick="window.__openMobileSidebar()" aria-label="Abrir menu lateral" title="Menu">☰</button>
         <div class="eyebrow">WORKSPACE PESSOAL • MULTI-CONTAS • NEON DB • FIREBASE AUTH</div>
       </div>
-      <div class="top-actions">
+      <div class="top-actions" style="position:relative">
         <button class="circle-btn" onclick="document.getElementById('search').focus()" title="Pesquisar (Ctrl + K)">🔍</button>
-        <button class="circle-btn" onclick="window.__openTelemetryTab()" title="Telemetria &amp; Soluções">
-          🔔<span class="bell-dot"></span>
-        </button>
+        <div style="position:relative">
+          <button class="circle-btn" id="alerts-bell-btn" onclick="window.__toggleAlertsBell()" aria-label="Alertas operacionais" aria-haspopup="dialog" title="Central de Alertas Operacionais">
+            🔔<span id="alerts-unread-badge" style="position:absolute;top:-4px;right:-4px;min-width:19px;height:19px;padding:0 4px;border-radius:99px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;display:${initialUnreadAlerts > 0 ? "grid" : "none"};place-items:center;border:2px solid #101729">${initialUnreadAlerts > 99 ? "99+" : initialUnreadAlerts}</span>
+          </button>
+          <div id="alerts-bell-backdrop" onclick="window.__closeAlertsBell()" style="display:none;position:fixed;inset:0;z-index:90;background:rgba(0,0,0,0.28)"></div>
+          <section id="alerts-bell-panel" role="dialog" aria-label="Central de alertas operacionais" style="display:none;position:fixed;left:12px;right:12px;top:64px;z-index:95;max-height:75dvh;overflow-y:auto;border-radius:16px;border:1px solid #354366;background:#0c1425;padding:12px;box-shadow:0 24px 60px rgba(0,0,0,0.75);max-width:390px;margin-left:auto">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+              <div>
+                <h2 style="margin:0;font-size:14px;font-weight:800;color:#fff">Alertas operacionais</h2>
+                <p style="margin:2px 0 0;font-size:11px;color:#9baac5">Baseados na última telemetria registrada no Neon</p>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button type="button" id="alerts-scan-btn" onclick="window.__scanAlertsNow()" title="Analisar agora" aria-label="Atualizar alertas" style="width:36px;height:36px;border-radius:9px;border:1px solid #304261;background:#10192e;color:#e2e8f0;cursor:pointer;display:grid;place-items:center">↻</button>
+                <button type="button" onclick="window.__closeAlertsBell()" aria-label="Fechar" style="width:36px;height:36px;border-radius:9px;border:1px solid #304261;background:#10192e;color:#e2e8f0;cursor:pointer;display:grid;place-items:center">✕</button>
+              </div>
+            </div>
+            <div id="alerts-bell-list" style="display:grid;gap:8px"></div>
+            <button type="button" onclick="window.__closeAlertsBell();window.__openTelemetryTab()" style="margin-top:10px;min-height:42px;width:100%;border-radius:11px;background:#5b46e8;border:1px solid #7c5cff;color:#fff;font-size:12px;font-weight:800;cursor:pointer">Abrir Telemetria &amp; Soluções</button>
+          </section>
+        </div>
         <button class="auth-pill" id="login-btn">🔒 Entrar com Google (Admin)</button>
       </div>
     </div>
@@ -1041,12 +1131,15 @@ const INITIAL_PROJECTS = ${JSON.stringify(safeRows).replace(/</g, "\\u003c")};
 const INITIAL_RECS = ${JSON.stringify(initialRecs).replace(/</g, "\\u003c")};
 const INITIAL_LOGS = ${JSON.stringify(safeLogs).replace(/</g, "\\u003c")};
 const INITIAL_TASKS = ${JSON.stringify(initialTasks).replace(/</g, "\\u003c")};
+const INITIAL_ALERTS = ${JSON.stringify(initialAlerts).replace(/</g, "\\u003c")};
 const DEFAULT_TAB = ${JSON.stringify(defaultTab)};
 
 let projects = INITIAL_PROJECTS;
 let recommendations = INITIAL_RECS;
 let syncLogs = INITIAL_LOGS;
 let tasks = INITIAL_TASKS;
+let opAlerts = INITIAL_ALERTS;
+let alertsOpen = false;
 let activeTab = window.location.pathname.includes("/telemetria") ? "telemetry" : DEFAULT_TAB;
 let activeSubTab = "diagnostic";
 let selectedRecId = recommendations[0]?.id || null;
@@ -1061,6 +1154,8 @@ try {
   recommendations = recommendations.map(r => localStatuses[r.id] ? { ...r, status: localStatuses[r.id] } : r);
   const localTasks = JSON.parse(localStorage.getItem("devcentral_tasks_v3") || "null");
   if (Array.isArray(localTasks) && localTasks.length > 0) tasks = localTasks;
+  const localReadAlerts = JSON.parse(localStorage.getItem("devcentral_alerts_read_v3") || "{}");
+  opAlerts = opAlerts.map(a => localReadAlerts[a.id] ? { ...a, readAt: localReadAlerts[a.id] } : a);
 } catch {}
 
 const $ = id => document.getElementById(id);
@@ -1073,8 +1168,131 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.key === "Escape") {
     window.__closeProjectModal();
+    window.__closeAlertsBell?.();
   }
 });
+
+function renderAlertsBell() {
+  const unread = opAlerts.filter(a => a.state === "active" && !a.readAt).length;
+  const badge = $("alerts-unread-badge");
+  if (badge) {
+    badge.textContent = unread > 99 ? "99+" : String(unread);
+    badge.style.display = unread > 0 ? "grid" : "none";
+  }
+  const listEl = $("alerts-bell-list");
+  if (!listEl) return;
+  if (!opAlerts.length) {
+    listEl.innerHTML = '<p style="font-size:12px;color:#9baac5;padding:24px 8px;text-align:center;margin:0">Nenhum alerta registrado. Clique em ↻ para executar uma análise.</p>';
+    return;
+  }
+  listEl.innerHTML = opAlerts.slice(0, 20).map(a => \`
+    <article style="border-radius:12px;border:1px solid \${a.state==='active'?'#374767':'#253149'};background:\${a.state==='active'?'#141e31':'#0d1626'};padding:11px;\${a.state==='recovered'?'opacity:0.65':''}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <div style="min-width:0">
+          <div style="font-size:10px;color:#9baac5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${esc(a.projectName)} · \${a.state==='recovered'?'Recuperado':a.severity==='critical'?'Crítico':'Atenção'}</div>
+          <h3 style="margin:4px 0 0;font-size:12px;font-weight:700;color:#fff;word-break:break-word">\${esc(a.title)}</h3>
+        </div>
+        \${a.state==='active' && !a.readAt ? '<span style="width:8px;height:8px;border-radius:99px;background:#f87171;flex-shrink:0" aria-label="Não lido"></span>' : ''}
+      </div>
+      <p style="margin:6px 0 0;font-size:11px;color:#bac6da;line-height:1.4;word-break:break-word">\${esc(a.evidence)}</p>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;justify-content:space-between">
+        <time style="font-size:10px;color:#92a2bd">\${new Date(a.lastSeenAt).toLocaleString("pt-BR")}</time>
+        \${!a.readAt ? \`<button type="button" onclick="window.__markAlertRead('\${esc(a.id)}')" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#3ddba0;background:transparent;border:1px solid rgba(45,212,160,0.35);padding:4px 8px;border-radius:7px;cursor:pointer">✓ Marcar lido</button>\` : '<span style="font-size:10px;color:#64748b">Lido</span>'}
+      </div>
+    </article>
+  \`).join("");
+}
+
+window.__toggleAlertsBell = async () => {
+  alertsOpen = !alertsOpen;
+  if ($("alerts-bell-panel")) $("alerts-bell-panel").style.display = alertsOpen ? "block" : "none";
+  if ($("alerts-bell-backdrop")) $("alerts-bell-backdrop").style.display = alertsOpen ? "block" : "none";
+  if (alertsOpen && window.__authedToken) {
+    try {
+      const res = await fetch("/api/alerts", { headers: { Authorization: "Bearer " + window.__authedToken }, cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.alerts)) opAlerts = data.alerts;
+      }
+    } catch {}
+  }
+  renderAlertsBell();
+};
+
+window.__closeAlertsBell = () => {
+  alertsOpen = false;
+  if ($("alerts-bell-panel")) $("alerts-bell-panel").style.display = "none";
+  if ($("alerts-bell-backdrop")) $("alerts-bell-backdrop").style.display = "none";
+};
+
+window.__scanAlertsNow = async () => {
+  const btn = $("alerts-scan-btn");
+  if (btn) btn.textContent = "⏳";
+  if (window.__authedToken) {
+    try {
+      await fetch("/api/alerts", { method: "POST", headers: { Authorization: "Bearer " + window.__authedToken } });
+      const res = await fetch("/api/alerts", { headers: { Authorization: "Bearer " + window.__authedToken }, cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.alerts)) opAlerts = data.alerts;
+      }
+    } catch {}
+  }
+  const activeIds = new Set(
+    recommendations
+      .filter(r => r.kind === "confirmed_issue" && (r.severity === "critical" || r.severity === "warning") && r.status !== "resolved")
+      .map(r => r.id)
+  );
+  const nowIso = new Date().toISOString();
+  const byId = new Map(opAlerts.map(a => [a.id, { ...a }]));
+  for (const r of recommendations) {
+    if (r.kind === "confirmed_issue" && (r.severity === "critical" || r.severity === "warning") && r.status !== "resolved") {
+      const prev = byId.get(r.id);
+      byId.set(r.id, {
+        id: r.id,
+        projectId: r.projectId,
+        projectName: r.projectName || "Sistema",
+        title: r.title,
+        evidence: r.evidence,
+        severity: r.severity,
+        state: "active",
+        readAt: prev && prev.state === "recovered" ? null : (prev ? prev.readAt : null),
+        firstSeenAt: prev ? prev.firstSeenAt : nowIso,
+        lastSeenAt: nowIso,
+        recoveredAt: null,
+        occurrences: prev ? prev.occurrences + 1 : 1
+      });
+    }
+  }
+  for (const [id, a] of byId.entries()) {
+    if (!activeIds.has(id) && a.state === "active") {
+      byId.set(id, { ...a, state: "recovered", recoveredAt: nowIso });
+    }
+  }
+  opAlerts = Array.from(byId.values());
+  if (btn) btn.textContent = "↻";
+  renderAlertsBell();
+};
+
+window.__markAlertRead = async (id) => {
+  const nowIso = new Date().toISOString();
+  opAlerts = opAlerts.map(a => a.id === id ? { ...a, readAt: a.readAt || nowIso } : a);
+  try {
+    const saved = JSON.parse(localStorage.getItem("devcentral_alerts_read_v3") || "{}");
+    saved[id] = nowIso;
+    localStorage.setItem("devcentral_alerts_read_v3", JSON.stringify(saved));
+  } catch {}
+  renderAlertsBell();
+  if (window.__authedToken) {
+    try {
+      await fetch("/api/alerts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + window.__authedToken },
+        body: JSON.stringify({ id })
+      });
+    } catch {}
+  }
+};
 
 function inferDb(p) {
   const hay = [p.name, p.description, p.tech, ...(p.tags || [])].join(" ").toLowerCase();
@@ -1841,6 +2059,7 @@ function renderActivity() {
 
 function render() {
   updateCounters();
+  renderAlertsBell();
   document.querySelectorAll("[data-tab]").forEach(b => {
     b.classList.toggle("active", b.dataset.tab === activeTab);
   });

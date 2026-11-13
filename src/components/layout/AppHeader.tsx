@@ -15,6 +15,7 @@ import {
   Menu,
 } from "lucide-react";
 import { FirebaseUser } from "@/lib/firebase";
+import { AlertsBell } from "@/components/alerts/AlertsBell";
 
 interface AppHeaderProps {
   syncing: boolean;
@@ -70,15 +71,7 @@ export function AppHeader({
             <Search className="w-4 h-4" />
           </button>
 
-          <button
-            type="button"
-            onClick={() => onTabChange?.("telemetry")}
-            className="relative w-10 h-10 rounded-full bg-[#101729] border border-[#222e4a] text-[#9baac5] hover:text-white hover:border-[#4b5d88] grid place-items-center transition cursor-pointer"
-            title="Alertas de Telemetria & Soluções"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#a855f7] ring-2 ring-[#101729]" />
-          </button>
+          <AlertsBell signedIn={Boolean(signedUser)} onOpenTelemetry={() => onTabChange?.("telemetry")} />
 
           {signedUser ? (
             <div className="flex items-center gap-2">
