@@ -45,6 +45,27 @@ const statusMap = new Map(
 
 let initialTasks = [];
 try {
+  await sql`
+    CREATE TABLE IF NOT EXISTS project_tasks (
+      id TEXT PRIMARY KEY,
+      project_id TEXT,
+      project_name TEXT DEFAULT 'Geral',
+      recommendation_id TEXT,
+      title TEXT NOT NULL,
+      priority TEXT DEFAULT 'medium',
+      status TEXT DEFAULT 'todo',
+      assignee TEXT DEFAULT 'Admin',
+      due_date TEXT DEFAULT '',
+      checklist JSONB DEFAULT '[]'::jsonb,
+      notes TEXT DEFAULT '',
+      issue_url TEXT DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  await sql`ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS assignee TEXT DEFAULT 'Admin'`;
+  await sql`ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS due_date TEXT DEFAULT ''`;
+  await sql`ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS checklist JSONB DEFAULT '[]'::jsonb`;
   const taskRows = await sql`SELECT * FROM project_tasks ORDER BY updated_at DESC LIMIT 50`;
   initialTasks = taskRows.map((t) => ({
     id: String(t.id),
@@ -54,6 +75,9 @@ try {
     title: String(t.title || ""),
     priority: String(t.priority || "medium"),
     status: String(t.status || "todo"),
+    assignee: String(t.assignee || "Admin"),
+    dueDate: String(t.due_date || ""),
+    checklist: Array.isArray(t.checklist) ? t.checklist : [],
     notes: String(t.notes || ""),
     issueUrl: String(t.issue_url || ""),
   }));
@@ -326,6 +350,23 @@ await sql`
   )
 `;
 await sql`CREATE INDEX IF NOT EXISTS maintenance_project_date_idx ON maintenance_analyses (project_id, created_at DESC)`;
+
+const maintRows = await sql`
+  SELECT * FROM maintenance_analyses
+  ORDER BY created_at DESC
+  LIMIT 200
+`;
+const initialMaintAnalyses = maintRows.map((r) => ({
+  id: String(r.id),
+  projectId: String(r.project_id),
+  projectName: String(r.project_name),
+  createdAt: r.created_at ? new Date(String(r.created_at)).toISOString() : new Date().toISOString(),
+  method: r.method === "ai" ? "ai" : "rules",
+  summary: String(r.summary || ""),
+  findings: Array.isArray(r.findings) ? r.findings : [],
+  aiAdvice: r.ai_advice ? String(r.ai_advice) : null,
+  sourceNote: String(r.source_note || ""),
+}));
 
 const confirmedActiveRecs = initialRecs.filter(
   (r) =>
@@ -2765,11 +2806,48 @@ body{margin:0;background:#070a14;color:#fff;font-family:Inter,system-ui,-apple-s
   </section>
   <div id="report-box"></div>
   <section class="panel">
-    <button type="button" id="btn-hist" style="width:100%;text-align:left;background:transparent;border:0;color:#fff;font-weight:800;font-size:14px;display:flex;justify-content:space-between;align-items:center;min-height:44px;cursor:pointer">
-      <span>🕒 Histórico de análises (<span id="hist-count">0</span>)</span>
+    <button type="button" id="btn-hist" aria-expanded="false" aria-controls="maintenance-history" style="width:100%;text-align:left;background:transparent;border:0;color:#fff;font-weight:800;font-size:14px;display:flex;justify-content:space-between;align-items:center;min-height:44px;cursor:pointer">
+      <span>🕒 Histórico de análises (<span id="hist-count">0</span> registros)</span>
       <span id="hist-toggle">+</span>
     </button>
-    <div id="hist-list" style="display:none;margin-top:12px;gap:8px"></div>
+    <div id="hist-wrap" style="display:none;margin-top:12px;gap:14px">
+      <p style="margin:0;font-size:12px;color:#9cacc8">Histórico completo salvo no Neon. O projeto acompanha a seleção acima.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">Pesquisar texto
+          <input id="hist-search" type="search" maxlength="160" aria-label="Pesquisar no histórico" placeholder="Projeto, erro ou evidência" class="sel" style="width:100%" />
+        </label>
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">Severidade
+          <select id="hist-sev" class="sel" style="width:100%">
+            <option value="">Todas</option>
+            <option value="critical">Crítico</option>
+            <option value="warning">Atenção</option>
+            <option value="info">Informativo</option>
+          </select>
+        </label>
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">Tipo
+          <select id="hist-method" class="sel" style="width:100%">
+            <option value="">Todas</option>
+            <option value="rules">Regras</option>
+            <option value="ai">Com IA</option>
+          </select>
+        </label>
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">De
+          <input id="hist-from" type="date" class="sel" style="width:100%" />
+        </label>
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">Até
+          <input id="hist-to" type="date" class="sel" style="width:100%" />
+        </label>
+        <button type="button" id="btn-hist-clear" class="sel" style="align-self:end">Limpar filtros</button>
+      </div>
+      <div id="hist-list" style="display:grid;gap:8px"></div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid #293756;padding-top:12px">
+        <span id="hist-page-info" aria-live="polite" style="font-size:12px;color:#aebfda">Página 1 de 1 • 0 análises</span>
+        <div style="display:flex;gap:8px">
+          <button type="button" id="btn-hist-prev" class="sel">Anterior</button>
+          <button type="button" id="btn-hist-next" class="sel">Próxima</button>
+        </div>
+      </div>
+    </div>
   </section>
   <footer style="font-size:12px;color:#8f9fbd">🛡️ As recomendações não alteram arquivos ou deploys. A verificação posterior deve ocorrer na Telemetria Operacional antes de encerrar alertas.</footer>
 </main>
@@ -2777,9 +2855,23 @@ body{margin:0;background:#070a14;color:#fff;font-family:Inter,system-ui,-apple-s
 const RECS = ${JSON.stringify(initialRecs).replace(/</g, "\\u003c")};
 const ALERTS = ${JSON.stringify(initialAlerts).replace(/</g, "\\u003c")};
 const PROJS = ${JSON.stringify(projOptions).replace(/</g, "\\u003c")};
+const NEON_HISTORY = ${JSON.stringify(initialMaintAnalyses).replace(/</g, "\\u003c")};
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let history = JSON.parse(localStorage.getItem("devcentral_maint_history_v3") || "[]");
+const PAGE_SIZE = 10;
+let localHist = JSON.parse(localStorage.getItem("devcentral_maint_history_v3") || "[]");
+function mergeHistory(a, b) {
+  const seen = new Set();
+  const out = [];
+  for (const item of [...a, ...b]) {
+    if (!item || !item.id || seen.has(item.id)) continue;
+    seen.add(item.id);
+    out.push(item);
+  }
+  return out.sort((x, y) => new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime());
+}
+let history = mergeHistory(localHist, NEON_HISTORY);
 let histOpen = false;
+let histPage = 1;
 
 function runAnalysis(projectId) {
   const proj = PROJS.find(p => p.id === projectId);
@@ -2806,6 +2898,7 @@ function runAnalysis(projectId) {
     id: "maint_" + Date.now(),
     projectId,
     projectName: proj.name,
+    method: "rules",
     createdAt: new Date().toISOString(),
     summary: findings.length
       ? findings.length + " item(ns) de manutenção identificado(s) para " + proj.name + ". " + repeats.length + " com recorrência registrada de três ou mais ocorrências."
@@ -2813,8 +2906,10 @@ function runAnalysis(projectId) {
     sourceNote: "Análise baseada em recomendações, alertas e tarefas armazenados no Neon; não substitui inspeção ao vivo.",
     findings
   };
-  history = [report, ...history].slice(0, 30);
-  try { localStorage.setItem("devcentral_maint_history_v3", JSON.stringify(history)); } catch {}
+  localHist = [report, ...localHist].slice(0, 200);
+  try { localStorage.setItem("devcentral_maint_history_v3", JSON.stringify(localHist)); } catch {}
+  history = mergeHistory(localHist, NEON_HISTORY);
+  histPage = 1;
   renderReport(report);
   renderHistory();
   const nb = document.getElementById("notice-box");
@@ -2874,31 +2969,89 @@ window.__createTaskFromMaint = (projectId, projectName, recId, title, severity, 
   nb.textContent = "Plano de ação criado! Abra Telemetria → Tarefas para acompanhar.";
 };
 
-function renderHistory() {
+function getFilteredProjectHistory() {
   const cur = document.getElementById("proj-sel").value;
-  const list = history.filter(h => h.projectId === cur).slice(0, 12);
-  document.getElementById("hist-count").textContent = String(list.length);
-  const el = document.getElementById("hist-list");
-  el.style.display = histOpen ? "grid" : "none";
+  const q = (document.getElementById("hist-search")?.value || "").trim().toLowerCase();
+  const sev = document.getElementById("hist-sev")?.value || "";
+  const method = document.getElementById("hist-method")?.value || "";
+  const from = document.getElementById("hist-from")?.value || "";
+  const to = document.getElementById("hist-to")?.value || "";
+  return history.filter(h => {
+    if (cur && h.projectId !== cur) return false;
+    if (method && (h.method || "rules") !== method) return false;
+    if (sev && !(h.findings || []).some(f => f.severity === sev)) return false;
+    const day = String(h.createdAt || "").slice(0, 10);
+    if (from && day < from) return false;
+    if (to && day > to) return false;
+    if (q) {
+      const hay = [
+        h.projectName,
+        h.summary,
+        new Date(h.createdAt).toLocaleString("pt-BR"),
+        JSON.stringify(h.findings || [])
+      ].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderHistory() {
+  const list = getFilteredProjectHistory();
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (histPage > totalPages) histPage = totalPages;
+  const offset = (histPage - 1) * PAGE_SIZE;
+  const visible = list.slice(offset, offset + PAGE_SIZE);
+  document.getElementById("hist-count").textContent = String(total);
+  const wrap = document.getElementById("hist-wrap");
+  wrap.style.display = histOpen ? "grid" : "none";
+  document.getElementById("btn-hist").setAttribute("aria-expanded", String(histOpen));
   document.getElementById("hist-toggle").textContent = histOpen ? "−" : "+";
-  el.innerHTML = list.length ? list.map((h, i) => \`
-    <button type="button" class="sel" style="text-align:left;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap" onclick="window.__openHist(\${i})">
-      <span>\${esc(h.summary.slice(0, 140))}</span>
-      <span style="font-size:12px;color:#95a9ca">\${new Date(h.createdAt).toLocaleString("pt-BR")}</span>
+  const el = document.getElementById("hist-list");
+  el.innerHTML = visible.length ? visible.map((h, i) => \`
+    <button type="button" class="sel" style="text-align:left;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap" onclick="window.__openHist(\${offset + i})">
+      <span style="min-width:0"><strong style="display:block;color:#a59bff;font-size:12px">\${esc(h.projectName)} • \${h.method === 'ai' ? 'IA' : 'Regras'}</strong><span style="display:block;margin-top:4px">\${esc(h.summary.slice(0, 200))}</span></span>
+      <span style="font-size:12px;color:#95a9ca;flex-shrink:0">\${new Date(h.createdAt).toLocaleString("pt-BR")}</span>
     </button>
-  \`).join("") : '<p style="margin:0;font-size:12px;color:#9cacc8">Nenhuma análise anterior para este projeto.</p>';
+  \`).join("") : '<p style="margin:0;font-size:12px;color:#9cacc8">Nenhuma análise encontrada para os filtros selecionados.</p>';
+  document.getElementById("hist-page-info").textContent = \`Página \${histPage} de \${totalPages} • \${total} análises\`;
+  document.getElementById("btn-hist-prev").disabled = histPage <= 1;
+  document.getElementById("btn-hist-next").disabled = histPage >= totalPages;
 }
 
 window.__openHist = (idx) => {
-  const cur = document.getElementById("proj-sel").value;
-  const list = history.filter(h => h.projectId === cur).slice(0, 12);
-  if (list[idx]) renderReport(list[idx]);
+  const list = getFilteredProjectHistory();
+  if (list[idx]) {
+    renderReport(list[idx]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 };
 
+const resetAndRender = () => { histPage = 1; renderHistory(); };
 document.getElementById("btn-analyze").onclick = () => runAnalysis(document.getElementById("proj-sel").value);
 document.getElementById("proj-sel").onchange = () => {
   document.getElementById("report-box").innerHTML = "";
-  renderHistory();
+  resetAndRender();
+};
+document.getElementById("hist-search").oninput = resetAndRender;
+document.getElementById("hist-sev").onchange = resetAndRender;
+document.getElementById("hist-method").onchange = resetAndRender;
+document.getElementById("hist-from").onchange = resetAndRender;
+document.getElementById("hist-to").onchange = resetAndRender;
+document.getElementById("btn-hist-clear").onclick = () => {
+  document.getElementById("hist-search").value = "";
+  document.getElementById("hist-sev").value = "";
+  document.getElementById("hist-method").value = "";
+  document.getElementById("hist-from").value = "";
+  document.getElementById("hist-to").value = "";
+  resetAndRender();
+};
+document.getElementById("btn-hist-prev").onclick = () => {
+  if (histPage > 1) { histPage -= 1; renderHistory(); }
+};
+document.getElementById("btn-hist-next").onclick = () => {
+  histPage += 1; renderHistory();
 };
 document.getElementById("btn-hist").onclick = () => {
   histOpen = !histOpen;

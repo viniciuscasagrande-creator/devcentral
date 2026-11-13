@@ -119,19 +119,40 @@ export async function saveMaintenanceReport(report: MaintenanceAnalysis) {
   `;
 }
 
-export async function listMaintenanceReports(projectId?: string): Promise<MaintenanceAnalysis[]> {
+export async function listMaintenanceReports(
+  projectId?: string,
+  limit = 12,
+  offset = 0
+): Promise<{ reports: MaintenanceAnalysis[]; total: number; hasMore: boolean }> {
   await ensureMaintenanceSchema();
   const sql = getSql();
-  const rows = projectId
-    ? await sql`SELECT * FROM maintenance_analyses WHERE project_id=${projectId} ORDER BY created_at DESC LIMIT 20`
-    : await sql`SELECT * FROM maintenance_analyses ORDER BY created_at DESC LIMIT 30`;
-  return rows.map(r => ({
+  const safeLimit = Math.min(Math.max(1, Number(limit) || 12), 50);
+  const safeOffset = Math.max(0, Number(offset) || 0);
+
+  const [rows, countRows] = projectId
+    ? await Promise.all([
+        sql`SELECT * FROM maintenance_analyses WHERE project_id=${projectId} ORDER BY created_at DESC LIMIT ${safeLimit} OFFSET ${safeOffset}`,
+        sql`SELECT COUNT(*)::int AS total FROM maintenance_analyses WHERE project_id=${projectId}`,
+      ])
+    : await Promise.all([
+        sql`SELECT * FROM maintenance_analyses ORDER BY created_at DESC LIMIT ${safeLimit} OFFSET ${safeOffset}`,
+        sql`SELECT COUNT(*)::int AS total FROM maintenance_analyses`,
+      ]);
+
+  const total = Number(countRows[0]?.total || 0);
+  const reports = rows.map(r => ({
     id: String(r.id), projectId: String(r.project_id), projectName: String(r.project_name),
     createdAt: new Date(String(r.created_at)).toISOString(),
-    method: r.method === "ai" ? "ai" : "rules", summary: String(r.summary),
+    method: r.method === "ai" ? "ai" as const : "rules" as const, summary: String(r.summary),
     findings: Array.isArray(r.findings) ? r.findings as MaintenanceFinding[] : [],
     aiAdvice: r.ai_advice ? String(r.ai_advice) : null, sourceNote: String(r.source_note),
   }));
+
+  return {
+    reports,
+    total,
+    hasMore: safeOffset + reports.length < total,
+  };
 }
 
 export async function getOptionalAiAdvice(report: MaintenanceAnalysis): Promise<string> {

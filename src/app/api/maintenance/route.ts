@@ -14,11 +14,18 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
   try {
     const projectId = req.nextUrl.searchParams.get("projectId") || undefined;
+    const limit = Math.min(Math.max(1, Number(req.nextUrl.searchParams.get("limit") || "12")), 50);
+    const offset = Math.max(0, Number(req.nextUrl.searchParams.get("offset") || "0"));
     if (projectId && projectId.length > 256) return NextResponse.json({error:"Projeto inválido."},{status:400});
-    const [projects, reports] = await Promise.all([listProjects(false), listMaintenanceReports(projectId)]);
+    const [projects, historyPage] = await Promise.all([
+      listProjects(false),
+      listMaintenanceReports(projectId, limit, offset),
+    ]);
     return NextResponse.json({
       projects: projects.map(p => ({ id: p.id, name: p.name, source: p.source })),
-      reports,
+      reports: historyPage.reports,
+      total: historyPage.total,
+      hasMore: historyPage.hasMore,
       aiAvailable: Boolean(process.env.OPENAI_API_KEY?.trim()),
     }, {headers:noCache});
   } catch (error) {
