@@ -48,7 +48,9 @@ type NavTab =
 async function authedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const token = await getFirebaseIdToken();
   const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${token}`);
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
   return fetch(input, { ...init, headers });
 }
 
@@ -193,13 +195,14 @@ export default function DevCentralDashboard() {
   };
 
   useEffect(() => {
+    if (!authReady) return;
+    loadProjects();
+    loadTelemetry();
     if (signedUser) {
-      loadProjects();
-      loadTelemetry();
       loadActivity();
     }
     initFirebaseAnalytics();
-  }, [signedUser, loadProjects, loadTelemetry, loadActivity]);
+  }, [authReady, signedUser, loadProjects, loadTelemetry, loadActivity]);
 
   const executeSync = async (providedKey?: string) => {
     setSyncing(true);
@@ -501,52 +504,19 @@ export default function DevCentralDashboard() {
     sortBy,
   ]);
 
-  if (!authReady) {
-    return (
-      <main className="min-h-screen bg-[#0a0e18] text-white grid place-items-center p-10">
-        <div className="text-center space-y-2">
-          <div className="text-lg font-bold text-[#3ddba0]">
-            Verificando acesso ao DevCentral 3.0...
-          </div>
-          <div className="text-xs text-[#9baac5]">
-            Firebase Authentication (devcentral-190fe)
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (!signedUser) {
-    return (
-      <main className="min-h-screen bg-[#0a0e18] text-white grid place-items-center p-6">
-        <div className="p-8 rounded-2xl border border-[#3ddba0]/50 bg-[#121a29] shadow-[0_0_24px_rgba(61,219,160,0.18)] max-w-md w-full space-y-5 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-[#7774ef] to-[#55e4ba] text-[#090f1a] font-black text-xl">
-            ⌘
-          </div>
-          <h1 className="text-2xl font-extrabold">
-            DevCentral 3.0 — Acesso Protegido
-          </h1>
-          <p className="text-sm text-[#9baac5]">
-            Entre com a conta Google autorizada no Firebase Authentication (
-            <code className="text-[#3ddba0]">devcentral-190fe</code>) para
-            gerenciar projetos, telemetria e sincronizações.
-          </p>
-          <button
-            type="button"
-            className="w-full bg-[#746ef0] hover:bg-[#635ce0] border border-[#827aff] text-white font-bold px-5 py-3 rounded-xl transition cursor-pointer"
-            onClick={() =>
-              signInWithGoogle().catch((e) => alert(e.message))
-            }
-          >
-            Entrar com Google
-          </button>
-        </div>
-      </main>
-    );
-  }
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (e: any) {
+      setBanner({
+        type: "error",
+        text: e?.message || "Não foi possível entrar com Google.",
+      });
+    }
+  };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[264px_1fr]">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[268px_1fr] bg-[#070a14] text-white">
       <AppSidebar
         activeTab={activeTab}
         telemetrySubTab={telemetrySubTab}
@@ -559,7 +529,12 @@ export default function DevCentralDashboard() {
         lastSync={lastSync}
         signedUser={signedUser}
         onSignOut={() => signOutFirebase()}
-        onOpenGitlabModal={() => setGitlabModalOpen(true)}
+        onOpenGitlabModal={() =>
+          signedUser ? setGitlabModalOpen(true) : handleSignIn()
+        }
+        onOpenSettingsModal={() =>
+          signedUser ? setSyncKeyModalOpen(true) : handleSignIn()
+        }
         onQuickFilter={(src, acc) => {
           setSourceFilter(src);
           setAccountFilter(acc || "");
@@ -567,17 +542,29 @@ export default function DevCentralDashboard() {
         }}
       />
 
-      <main className="p-5 sm:p-8 lg:p-10 max-w-[1600px] w-full mx-auto">
+      <main className="p-4 sm:p-6 lg:px-8 lg:py-6 max-w-[1640px] w-full mx-auto">
         <AppHeader
           syncing={syncing}
-          onSyncClick={() =>
-            integrationStatus?.requiresSyncKey
-              ? setSyncKeyModalOpen(true)
-              : executeSync()
-          }
-          onNewProjectClick={() => openModal()}
+          onSyncClick={() => {
+            if (!signedUser) {
+              handleSignIn();
+              return;
+            }
+            if (integrationStatus?.requiresSyncKey) {
+              setSyncKeyModalOpen(true);
+            } else {
+              executeSync();
+            }
+          }}
+          onNewProjectClick={() => (signedUser ? openModal() : handleSignIn())}
           onTabChange={setActiveTab}
           activeTab={activeTab}
+          signedUser={signedUser}
+          onSignInClick={handleSignIn}
+          onSignOutClick={() => signOutFirebase()}
+          onFocusSearch={() =>
+            document.getElementById("project-search-input")?.focus()
+          }
         />
 
         {banner && (
@@ -633,21 +620,13 @@ export default function DevCentralDashboard() {
           <>
             <OverviewStats
               projects={visibleProjects}
+              onOpenGitlabModal={() =>
+                signedUser ? setGitlabModalOpen(true) : handleSignIn()
+              }
               onFilterSelect={(f) => {
                 if (f.source !== undefined) setSourceFilter(f.source);
                 if (f.state !== undefined) setStateFilter(f.state);
                 if (f.lang !== undefined) setLangFilter(f.lang);
-                setActiveTab("all");
-              }}
-            />
-
-            <IntegrationOverview
-              integrationStatus={integrationStatus}
-              projects={visibleProjects}
-              onOpenGitlabModal={() => setGitlabModalOpen(true)}
-              onSelectSourceFilter={(src, acc) => {
-                setSourceFilter(src);
-                setAccountFilter(acc || "");
                 setActiveTab("all");
               }}
             />
@@ -669,6 +648,8 @@ export default function DevCentralDashboard() {
               onViewModeChange={setViewMode}
               availableLanguages={availableLanguages}
               availableVercelAccounts={availableVercelAccounts}
+              filteredCount={filteredProjects.length}
+              totalCount={visibleProjects.length}
               onClearAll={() => {
                 setSearchQuery("");
                 setSourceFilter("");
@@ -678,19 +659,17 @@ export default function DevCentralDashboard() {
               }}
             />
 
-            <div className="flex items-center justify-between mb-3 text-xs text-[#9baac5]">
-              <span>
-                Exibindo <strong>{filteredProjects.length}</strong> de{" "}
-                <strong>{visibleProjects.length}</strong> projetos (4 cards por linha no desktop)
-              </span>
-            </div>
-
             <ProjectGrid
               projects={filteredProjects}
+              viewMode={viewMode}
               onSelect={setSelectedProject}
-              onEdit={openModal}
-              onDelete={handleDeleteProject}
-              onTogglePin={handleTogglePin}
+              onEdit={(p) => (signedUser ? openModal(p) : handleSignIn())}
+              onDelete={(p) =>
+                signedUser ? handleDeleteProject(p) : handleSignIn()
+              }
+              onTogglePin={(p) =>
+                signedUser ? handleTogglePin(p) : handleSignIn()
+              }
             />
           </>
         )}

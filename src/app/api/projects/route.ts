@@ -6,20 +6,38 @@ import { getIntegrationStatus } from "@/lib/integrations";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const denied = await requireAdmin(req);
-  if (denied) return denied;
+  const hasAuthHeader = Boolean(req.headers.get("authorization"));
+  let isAdmin = false;
+  if (hasAuthHeader) {
+    const denied = await requireAdmin(req);
+    if (denied) return denied;
+    isAdmin = true;
+  }
+
   try {
-    const includeHidden = req.nextUrl.searchParams.get("includeHidden") === "true";
-    const [projects, lastSync] = await Promise.all([
+    const includeHidden =
+      isAdmin && req.nextUrl.searchParams.get("includeHidden") === "true";
+    const [allProjects, lastSync] = await Promise.all([
       listProjects(includeHidden),
       getLastSyncLog(),
     ]);
     const integrationStatus = getIntegrationStatus();
 
+    const projects = isAdmin
+      ? allProjects
+      : allProjects
+          .filter((p) => !p.is_hidden && p.visibility === "public")
+          .map((p) => ({
+            ...p,
+            custom_notes: "",
+            local_path: "",
+          }));
+
     return NextResponse.json({
       projects,
       lastSync,
       integrationStatus,
+      isAdmin,
     });
   } catch (err: any) {
     console.error("GET /api/projects error:", err);
