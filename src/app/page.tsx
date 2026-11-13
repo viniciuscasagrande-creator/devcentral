@@ -528,7 +528,7 @@ export default function DevCentralDashboard() {
   };
 
   return (
-    <div className="min-h-screen min-w-0 grid grid-cols-1 lg:grid-cols-[268px_1fr] bg-[#070a14] text-white">
+    <div className="min-h-screen min-w-0 grid grid-cols-1 lg:grid-cols-[292px_1fr] bg-[#070a14] text-white">
       {/* Mobile toolbar stays outside desktop sidebar; all actions use existing handlers. */}
       <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#273254] bg-[#080c17]/95 backdrop-blur-lg px-4 py-3 min-w-0">
         <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menu" aria-controls="devcentral-mobile-drawer" aria-expanded={mobileMenuOpen}
@@ -587,7 +587,7 @@ export default function DevCentralDashboard() {
       />
       </div>
 
-      <main className="min-w-0 p-4 pb-28 sm:p-6 sm:pb-28 lg:px-8 lg:py-6 max-w-[1640px] w-full mx-auto">
+      <main className="min-w-0 pl-4 pr-5 py-4 pb-28 sm:pl-6 sm:pr-7 sm:py-6 sm:pb-28 lg:pl-8 lg:pr-10 lg:py-6 max-w-[1640px] w-full mx-auto">
         <AppHeader
           syncing={syncing}
           onSyncClick={() => {

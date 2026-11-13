@@ -68,7 +68,7 @@ export function AppSidebar({
   };
 
   return (
-    <aside className="border-r border-[#1c243b] bg-[#080c17] px-3.5 py-5 flex flex-col justify-between gap-5 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto select-none">
+    <aside className="border-r border-[#1c243b] bg-[#080c17] pl-4 pr-5 py-5 flex flex-col justify-between gap-5 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto [scrollbar-gutter:stable] select-none">
       <div className="space-y-5">
         {/* Brand Header */}
         <div className="flex items-center justify-between gap-2 px-1">

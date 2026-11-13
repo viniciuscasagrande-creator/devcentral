@@ -34,15 +34,15 @@ body {
 }
 ::-webkit-scrollbar-thumb {
   background: #29344a;
-  border-radius: 4px;
+  border-radius: 999px;
+  border: 2px solid #0a0e18;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #3d4d6d;
 }
 
-
 /* DevCentral 3 mobile edition: layout, touch and safe areas */
-html { width: 100%; overflow-x: clip; }
+html { width: 100%; overflow-x: clip; scrollbar-gutter: stable; }
 body { min-width: 320px; width: 100%; }
 main, article, section, form, .min-w-0 { min-width: 0; }
 img, video, canvas { max-width: 100%; height: auto; }

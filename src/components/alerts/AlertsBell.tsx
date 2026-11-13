@@ -109,7 +109,7 @@ export function AlertsBell({
       {open && signedIn && (
         <>
           <button type="button" aria-label="Fechar alertas" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-black/25 sm:bg-transparent cursor-default" />
-          <section role="dialog" aria-label="Central de alertas operacionais" className="fixed inset-x-3 top-16 z-50 max-h-[75dvh] overflow-y-auto rounded-2xl border border-[#354366] bg-[#0c1425] p-3 shadow-2xl sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[390px] sm:max-h-[65vh]">
+          <section role="dialog" aria-label="Central de alertas operacionais" className="fixed inset-x-3 top-16 z-50 max-h-[75dvh] overflow-y-auto [scrollbar-gutter:stable] rounded-2xl border border-[#354366] bg-[#0c1425] pl-3 pr-4 py-3 shadow-2xl sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[400px] sm:max-h-[65vh]">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div>
                 <h2 className="text-sm font-bold text-white">Alertas operacionais</h2>
