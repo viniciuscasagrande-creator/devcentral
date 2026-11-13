@@ -33,7 +33,7 @@ function base64UrlDecode(input: string): Buffer {
 
 export async function verifyFirebaseIdToken(
   idToken: string
-): Promise<{ uid: string; email?: string }> {
+): Promise<{ uid: string; email?: string; emailVerified?: boolean }> {
   const parts = idToken.split(".");
   if (parts.length !== 3) {
     throw new Error("Formato de token inválido");
@@ -79,8 +79,14 @@ export async function verifyFirebaseIdToken(
   return {
     uid: payload.sub,
     email: payload.email,
+    emailVerified: Boolean(payload.email_verified),
   };
 }
+
+const DEFAULT_ADMIN_EMAILS = [
+  "develop.diskingressos@gmail.com",
+  "vinicius.casagrande@diskingressos.com.br",
+];
 
 export async function requireAdmin(
   req: NextRequest
@@ -95,7 +101,7 @@ export async function requireAdmin(
     );
   }
 
-  let user: { uid: string; email?: string };
+  let user: { uid: string; email?: string; emailVerified?: boolean };
   try {
     user = await verifyFirebaseIdToken(bearer);
   } catch {
@@ -106,17 +112,31 @@ export async function requireAdmin(
   }
 
   const allowedUid = process.env.DEVCENTRAL_ADMIN_UID?.trim();
-  if (!allowedUid) {
-    return NextResponse.json(
-      { error: "Administrador não configurado" },
-      { status: 503 }
-    );
+  if (allowedUid) {
+    if (user.uid !== allowedUid) {
+      return NextResponse.json(
+        { error: "Acesso não autorizado" },
+        { status: 403 }
+      );
+    }
+    return null;
   }
-  if (user.uid !== allowedUid) {
-    return NextResponse.json(
-      { error: "Acesso não autorizado" },
-      { status: 403 }
-    );
+
+  const customEmail = process.env.DEVCENTRAL_ADMIN_EMAIL?.trim().toLowerCase();
+  const allowedEmails = customEmail
+    ? [customEmail, ...DEFAULT_ADMIN_EMAILS]
+    : DEFAULT_ADMIN_EMAILS;
+
+  if (
+    user.email &&
+    user.emailVerified !== false &&
+    allowedEmails.includes(user.email.toLowerCase())
+  ) {
+    return null;
   }
-  return null;
+
+  return NextResponse.json(
+    { error: "Acesso não autorizado" },
+    { status: 403 }
+  );
 }

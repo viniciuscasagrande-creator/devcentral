@@ -1,6 +1,7 @@
 {
   "hosting": {
-    "public": "firebase-public",
+    "public": "firebase-dist",
+    "cleanUrls": true,
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -8,12 +9,12 @@
     ],
     "rewrites": [
       {
+        "source": "/telemetria",
+        "destination": "/telemetria/index.html"
+      },
+      {
         "source": "**",
-        "run": {
-          "serviceId": "devcentral-api",
-          "region": "us-central1",
-          "pinTag": true
-        }
+        "destination": "/index.html"
       }
     ]
   }
