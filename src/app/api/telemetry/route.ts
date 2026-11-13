@@ -8,11 +8,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const hasAuthHeader = Boolean(req.headers.get("authorization"));
-  if (hasAuthHeader) {
-    const denied = await requireAdmin(req);
-    if (denied) return denied;
-  }
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   try {
     return NextResponse.json(await getTelemetryPayload(), {
       headers: { "Cache-Control": "private, no-store" },

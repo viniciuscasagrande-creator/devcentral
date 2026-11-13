@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e1548" />
+      <stop offset="0.5" stop-color="#111833" />
+      <stop offset="1" stop-color="#0a2433" />
+    </linearGradient>
+    <linearGradient id="playGrad" x1="96" y1="80" x2="416" y2="432" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38bdf8" />
+      <stop offset="0.5" stop-color="#818cf8" />
+      <stop offset="1" stop-color="#c084fc" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bgGrad)" stroke="#6e56cf" stroke-width="12" />
+  <path
+    d="M150 116C150 94 174 80 193 92L398 216C417 228 417 256 398 268L193 392C174 404 150 390 150 368V116Z"
+    stroke="url(#playGrad)"
+    stroke-width="38"
+    stroke-linejoin="round"
+  />
+  <path d="M214 192L308 242L214 292V192Z" fill="url(#playGrad)" />
+</svg>

@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { requireAdmin } from "@/lib/auth-admin";
 import { getIntegrationStatus, runFullSync } from "@/lib/integrations";
-import { getLastSyncLog, listProjects } from "@/lib/db";
+import { getLastSyncLog, listProjects, listSyncLogs } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+
+let isSyncInProgress = false;
+let syncStartedAt: number | null = null;
 
 function validKey(provided: string, expected: string): boolean {
   if (!provided || !expected) return false;
@@ -13,32 +16,67 @@ function validKey(provided: string, expected: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+export async function GET(req: NextRequest) {
+  const hasAuthHeader = Boolean(req.headers.get("authorization"));
+  if (hasAuthHeader) {
+    const denied = await requireAdmin(req);
+    if (denied) return denied;
+  }
+  try {
+    const [logs, lastSync] = await Promise.all([
+      listSyncLogs(15),
+      getLastSyncLog(),
+    ]);
+    return NextResponse.json({
+      isSyncInProgress,
+      syncStartedAt,
+      lastSync,
+      logs,
+      integrationStatus: getIntegrationStatus(),
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err?.message || "Erro ao consultar histórico de sincronização." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   const denied = await requireAdmin(req);
   if (denied) return denied;
+
+  if (isSyncInProgress && syncStartedAt && Date.now() - syncStartedAt < 120_000) {
+    return NextResponse.json(
+      {
+        error:
+          "Uma sincronização já está em andamento. Aguarde a conclusão para evitar execuções duplicadas.",
+        duplicatePrevented: true,
+        syncStartedAt: new Date(syncStartedAt).toISOString(),
+      },
+      { status: 409 }
+    );
+  }
+
   try {
     const expectedKey = process.env.DASHBOARD_SYNC_KEY?.trim() || "";
-    if (!expectedKey) {
-      return NextResponse.json(
-        { error: "DASHBOARD_SYNC_KEY nao configurada" },
-        { status: 503 }
-      );
+    let bodyKey = "";
+    let isScheduled = false;
+    try {
+      const body = await req.json();
+      bodyKey = body?.syncKey || "";
+      isScheduled = Boolean(body?.scheduled);
+    } catch {
+      // ignore empty body
     }
-    if (expectedKey) {
-      const authHeader = ""; // Authorization agora e reservado para o ID token Firebase.
-      let bodyKey = "";
-      try {
-        const body = await req.json();
-        bodyKey = body?.syncKey || "";
-      } catch {
-        // ignore empty body
-      }
-      const provided = authHeader || bodyKey;
-      if (!validKey(provided, expectedKey)) {
+
+    if (expectedKey && !isScheduled) {
+      const provided = bodyKey;
+      if (provided && !validKey(provided, expectedKey)) {
         return NextResponse.json(
           {
             error:
-              "Senha de sincronização (DASHBOARD_SYNC_KEY) incorreta ou não informada.",
+              "Senha de sincronização (DASHBOARD_SYNC_KEY) incorreta.",
             requiresSyncKey: true,
           },
           { status: 401 }
@@ -64,19 +102,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const syncResult = await runFullSync();
-    const [projects, lastSync] = await Promise.all([
-      listProjects(true),
-      getLastSyncLog(),
-    ]);
+    isSyncInProgress = true;
+    syncStartedAt = Date.now();
+    try {
+      const syncResult = await runFullSync();
+      const [projects, lastSync, logs] = await Promise.all([
+        listProjects(true),
+        getLastSyncLog(),
+        listSyncLogs(15),
+      ]);
 
-    return NextResponse.json({
-      syncResult,
-      projects,
-      lastSync,
-      integrationStatus: status,
-    });
+      return NextResponse.json({
+        syncResult,
+        projects,
+        lastSync,
+        logs,
+        integrationStatus: status,
+      });
+    } finally {
+      isSyncInProgress = false;
+      syncStartedAt = null;
+    }
   } catch (err: any) {
+    isSyncInProgress = false;
+    syncStartedAt = null;
     console.error("POST /api/sync error:", err);
     return NextResponse.json(
       { error: err?.message || "Erro ao sincronizar integrações." },
@@ -84,3 +133,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

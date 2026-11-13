@@ -12,6 +12,7 @@ import {
   Layers,
   Plus,
   LogOut,
+  Menu,
 } from "lucide-react";
 import { FirebaseUser } from "@/lib/firebase";
 
@@ -25,6 +26,7 @@ interface AppHeaderProps {
   onSignInClick?: () => void;
   onSignOutClick?: () => void;
   onFocusSearch?: () => void;
+  onOpenMobileMenu?: () => void;
 }
 
 export function AppHeader({
@@ -36,6 +38,7 @@ export function AppHeader({
   onSignInClick,
   onSignOutClick,
   onFocusSearch,
+  onOpenMobileMenu,
 }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -43,15 +46,25 @@ export function AppHeader({
     <div className="space-y-4 mb-5">
       {/* Top Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
-        <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a5b4fc]">
-          WORKSPACE PESSOAL • MULTI-CONTAS • NEON DB • FIREBASE AUTH
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={onOpenMobileMenu}
+            aria-label="Abrir menu de navegação"
+            className="lg:hidden w-10 h-10 rounded-xl bg-[#101729] border border-[#2a3859] text-white grid place-items-center cursor-pointer shrink-0"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="text-[10.5px] sm:text-[11px] font-bold uppercase tracking-[0.14em] sm:tracking-[0.18em] text-[#a5b4fc] truncate">
+            WORKSPACE PESSOAL • MULTI-CONTAS • NEON DB • FIREBASE AUTH
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onFocusSearch}
-            className="w-9 h-9 rounded-full bg-[#101729] border border-[#222e4a] text-[#9baac5] hover:text-white hover:border-[#4b5d88] grid place-items-center transition cursor-pointer"
+            className="w-10 h-10 rounded-full bg-[#101729] border border-[#222e4a] text-[#9baac5] hover:text-white hover:border-[#4b5d88] grid place-items-center transition cursor-pointer"
             title="Pesquisar (Ctrl + K)"
           >
             <Search className="w-4 h-4" />
@@ -60,11 +73,11 @@ export function AppHeader({
           <button
             type="button"
             onClick={() => onTabChange?.("telemetry")}
-            className="relative w-9 h-9 rounded-full bg-[#101729] border border-[#222e4a] text-[#9baac5] hover:text-white hover:border-[#4b5d88] grid place-items-center transition cursor-pointer"
+            className="relative w-10 h-10 rounded-full bg-[#101729] border border-[#222e4a] text-[#9baac5] hover:text-white hover:border-[#4b5d88] grid place-items-center transition cursor-pointer"
             title="Alertas de Telemetria & Soluções"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-[#a855f7] ring-2 ring-[#101729]" />
+            <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-[#a855f7] ring-2 ring-[#101729]" />
           </button>
 
           {signedUser ? (

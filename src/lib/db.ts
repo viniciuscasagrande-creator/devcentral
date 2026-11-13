@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { Project, SyncLog, VercelDeploymentLink } from "@/types/project";
+import { ProjectTask, TaskPriority, TaskStatus } from "@/types/telemetry";
 
 export function getSql() {
   const url = process.env.DATABASE_URL;
@@ -76,6 +77,21 @@ export async function ensureSchema() {
       remediation_steps TEXT[] DEFAULT '{}',
       suggested_commands TEXT[] DEFAULT '{}',
       status TEXT NOT NULL DEFAULT 'pending',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS project_tasks (
+      id TEXT PRIMARY KEY,
+      project_id TEXT,
+      project_name TEXT NOT NULL DEFAULT '',
+      recommendation_id TEXT,
+      title TEXT NOT NULL,
+      priority TEXT NOT NULL DEFAULT 'medium',
+      status TEXT NOT NULL DEFAULT 'todo',
+      notes TEXT DEFAULT '',
+      issue_url TEXT DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `;
@@ -188,3 +204,108 @@ export function mapRowToProject(r: Record<string, any>): Project {
       : new Date().toISOString(),
   };
 }
+
+export async function listProjectTasks(projectId?: string): Promise<ProjectTask[]> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = projectId
+    ? await sql`
+        SELECT * FROM project_tasks
+        WHERE project_id = ${projectId}
+        ORDER BY
+          CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
+          updated_at DESC
+      `
+    : await sql`
+        SELECT * FROM project_tasks
+        ORDER BY
+          CASE status WHEN 'in_progress' THEN 0 WHEN 'todo' THEN 1 ELSE 2 END,
+          CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
+          updated_at DESC
+      `;
+  return rows.map((r) => ({
+    id: String(r.id),
+    projectId: r.project_id ? String(r.project_id) : null,
+    projectName: String(r.project_name || "Geral"),
+    recommendationId: r.recommendation_id ? String(r.recommendation_id) : null,
+    title: String(r.title || ""),
+    priority: (["high", "medium", "low"].includes(String(r.priority))
+      ? r.priority
+      : "medium") as TaskPriority,
+    status: (["todo", "in_progress", "done"].includes(String(r.status))
+      ? r.status
+      : "todo") as TaskStatus,
+    notes: r.notes ? String(r.notes) : "",
+    issueUrl: r.issue_url ? String(r.issue_url) : "",
+    createdAt: r.created_at
+      ? new Date(r.created_at).toISOString()
+      : new Date().toISOString(),
+    updatedAt: r.updated_at
+      ? new Date(r.updated_at).toISOString()
+      : new Date().toISOString(),
+  }));
+}
+
+export async function upsertProjectTask(input: {
+  id: string;
+  projectId: string | null;
+  projectName: string;
+  recommendationId?: string | null;
+  title: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  notes?: string | null;
+  issueUrl?: string | null;
+}): Promise<ProjectTask> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = await sql`
+    INSERT INTO project_tasks (
+      id, project_id, project_name, recommendation_id, title, priority, status, notes, issue_url, updated_at
+    ) VALUES (
+      ${input.id},
+      ${input.projectId || null},
+      ${input.projectName || "Geral"},
+      ${input.recommendationId || null},
+      ${input.title},
+      ${input.priority},
+      ${input.status},
+      ${input.notes || ""},
+      ${input.issueUrl || ""},
+      NOW()
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      project_id = EXCLUDED.project_id,
+      project_name = EXCLUDED.project_name,
+      recommendation_id = COALESCE(EXCLUDED.recommendation_id, project_tasks.recommendation_id),
+      title = EXCLUDED.title,
+      priority = EXCLUDED.priority,
+      status = EXCLUDED.status,
+      notes = EXCLUDED.notes,
+      issue_url = EXCLUDED.issue_url,
+      updated_at = NOW()
+    RETURNING *
+  `;
+  const r = rows[0];
+  return {
+    id: String(r.id),
+    projectId: r.project_id ? String(r.project_id) : null,
+    projectName: String(r.project_name || "Geral"),
+    recommendationId: r.recommendation_id ? String(r.recommendation_id) : null,
+    title: String(r.title || ""),
+    priority: r.priority as TaskPriority,
+    status: r.status as TaskStatus,
+    notes: r.notes ? String(r.notes) : "",
+    issueUrl: r.issue_url ? String(r.issue_url) : "",
+    createdAt: new Date(r.created_at).toISOString(),
+    updatedAt: new Date(r.updated_at).toISOString(),
+  };
+}
+
+export async function deleteProjectTask(id: string): Promise<boolean> {
+  await ensureSchema();
+  const sql = getSql();
+  await sql`DELETE FROM project_tasks WHERE id = ${id}`;
+  return true;
+}
+

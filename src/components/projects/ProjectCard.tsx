@@ -10,6 +10,7 @@ import {
   Eye,
   Edit3,
   Trash2,
+  Activity,
 } from "lucide-react";
 
 interface ProjectCardProps {
@@ -226,7 +227,7 @@ export function ProjectCard({
                   className="w-full text-left px-2.5 py-1.5 rounded-lg text-[#d5dff2] hover:text-white hover:bg-[#1a243d] flex items-center gap-2 cursor-pointer"
                 >
                   <Eye className="w-3.5 h-3.5 text-[#a78bfa]" />
-                  Ver detalhes
+                  Analisar projeto
                 </button>
                 <button
                   type="button"
@@ -255,6 +256,16 @@ export function ProjectCard({
           </div>
         </div>
       </div>
+
+      {/* Botão Principal: Analisar projeto */}
+      <button
+        type="button"
+        onClick={() => onSelect(p)}
+        className="mt-2.5 w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-[#5641e5]/25 via-[#3f2ea8]/25 to-[#1b2b4b]/40 hover:from-[#5641e5] hover:to-[#4330c6] border border-[#6e56cf]/50 hover:border-[#9482ff] text-[#d5ceff] hover:text-white font-bold text-[11.5px] flex items-center justify-center gap-1.5 transition shadow-[0_0_12px_rgba(124,92,255,0.15)] cursor-pointer"
+      >
+        <Activity className="w-3.5 h-3.5 text-[#a78bfa]" />
+        Analisar projeto
+      </button>
     </article>
   );
 }

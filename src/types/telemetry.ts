@@ -1,5 +1,28 @@
 export type RecommendationStatus = "open" | "investigating" | "resolved";
 export type RecommendationSeverity = "critical" | "warning" | "info";
+export type TaskPriority = "high" | "medium" | "low";
+export type TaskStatus = "todo" | "in_progress" | "done";
+
+export interface ProposedCodeChange {
+  filename: string;
+  language: string;
+  description: string;
+  snippet: string;
+}
+
+export interface ProjectTask {
+  id: string;
+  projectId: string | null;
+  projectName: string;
+  recommendationId?: string | null;
+  title: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  notes?: string | null;
+  issueUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface TelemetryRecommendation {
   id: string;
@@ -17,6 +40,7 @@ export interface TelemetryRecommendation {
   probableCause?: string;
   steps?: string[];
   commands?: string[];
+  proposedCode?: ProposedCodeChange;
 }
 
 export interface TelemetryEvent {
@@ -37,9 +61,12 @@ export interface TelemetryPayload {
     open: number;
     investigating: number;
     resolved: number;
+    staleRepos?: number;
     lastSyncAt: string | null;
   };
   recommendations: TelemetryRecommendation[];
   events: TelemetryEvent[];
+  tasks?: ProjectTask[];
   projects: { id: string; name: string }[];
 }
+

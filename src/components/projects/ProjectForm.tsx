@@ -74,10 +74,10 @@ export function ProjectForm({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[80] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-lg rounded-2xl border border-[#344463] bg-[#111a2b] p-6 text-white shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+        className="mobile-project-form w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-[#344463] bg-[#111a2b] p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-6 text-white shadow-2xl space-y-4 max-h-[94dvh] sm:max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-extrabold">

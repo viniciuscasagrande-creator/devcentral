@@ -17,6 +17,7 @@ import {
   ArrowRight,
   ChevronsLeft,
   EyeOff,
+  X,
 } from "lucide-react";
 import { TelemetrySubTab } from "@/components/telemetry/TelemetrySolutionsCenter";
 
@@ -42,6 +43,8 @@ interface AppSidebarProps {
   onOpenGitlabModal: () => void;
   onOpenSettingsModal?: () => void;
   onQuickFilter?: (source: string, account?: string) => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export function AppSidebar({
@@ -52,14 +55,20 @@ export function AppSidebar({
   onOpenGitlabModal,
   onOpenSettingsModal,
   onQuickFilter,
+  onCloseMobile,
 }: AppSidebarProps) {
   const acc1 =
     integrationStatus?.vercel1.accountName || "viniciuscasagrande-creator";
   const acc2 =
     integrationStatus?.vercel2.accountName || "DEVELOPDISKINGRESSOS-9897";
 
+  const handleNavClick = (action: () => void) => {
+    action();
+    onCloseMobile?.();
+  };
+
   return (
-    <aside className="border-b lg:border-b-0 lg:border-r border-[#1c243b] bg-[#080c17] px-3.5 py-5 flex flex-col justify-between gap-5 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto select-none">
+    <aside className="border-r border-[#1c243b] bg-[#080c17] px-3.5 py-5 flex flex-col justify-between gap-5 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto select-none">
       <div className="space-y-5">
         {/* Brand Header */}
         <div className="flex items-center justify-between gap-2 px-1">
@@ -102,7 +111,7 @@ export function AppSidebar({
                 <span className="font-extrabold text-[19px] tracking-tight text-white">
                   DevCentral
                 </span>
-                <span className="text-xs font-bold text-[#a5b4fc]">2.1</span>
+                <span className="text-xs font-bold text-[#a5b4fc]">3.0</span>
               </div>
               <div className="text-[10.5px] text-[#7f8ea8] truncate">
                 Multi-contas • Neon DB • Firebase
@@ -158,8 +167,8 @@ export function AppSidebar({
             {/* GitHub */}
             <button
               type="button"
-              onClick={() => onQuickFilter?.("GitHub", "")}
-              className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#11182b] transition cursor-pointer text-left"
+              onClick={() => handleNavClick(() => onQuickFilter?.("GitHub", ""))}
+              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg hover:bg-[#11182b] transition cursor-pointer text-left"
             >
               <span className="flex items-center gap-2 text-[#c8d4eb] truncate">
                 <svg
@@ -179,8 +188,8 @@ export function AppSidebar({
             {/* GitLab */}
             <button
               type="button"
-              onClick={onOpenGitlabModal}
-              className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#11182b] transition cursor-pointer text-left"
+              onClick={() => handleNavClick(onOpenGitlabModal)}
+              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg hover:bg-[#11182b] transition cursor-pointer text-left"
             >
               <span className="flex items-center gap-2 text-[#c8d4eb] truncate">
                 <svg
@@ -200,30 +209,30 @@ export function AppSidebar({
             {/* Vercel 1 */}
             <button
               type="button"
-              onClick={() => onQuickFilter?.("", acc1)}
-              className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#11182b] transition cursor-pointer text-left"
+              onClick={() => handleNavClick(() => onQuickFilter?.("", acc1))}
+              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg hover:bg-[#11182b] transition cursor-pointer text-left"
             >
               <span className="flex items-center gap-2 text-[#c8d4eb] truncate">
                 <span className="text-[10px] text-[#a5b4fc] shrink-0">▲</span>
                 <span className="truncate">{acc1}</span>
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#0d2e28] text-[#3ddba0] border border-[#2dd4a0]/45 shrink-0">
-                Ativo
+                Ativo ({counts.vercel1})
               </span>
             </button>
 
             {/* Vercel 2 */}
             <button
               type="button"
-              onClick={() => onQuickFilter?.("", acc2)}
-              className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#11182b] transition cursor-pointer text-left"
+              onClick={() => handleNavClick(() => onQuickFilter?.("", acc2))}
+              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg hover:bg-[#11182b] transition cursor-pointer text-left"
             >
               <span className="flex items-center gap-2 text-[#c8d4eb] truncate">
                 <span className="text-[10px] text-[#a5b4fc] shrink-0">▲</span>
                 <span className="truncate">{acc2}</span>
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#0d2e28] text-[#3ddba0] border border-[#2dd4a0]/45 shrink-0">
-                Ativo
+                Ativo ({counts.vercel2})
               </span>
             </button>
           </div>
@@ -239,10 +248,12 @@ export function AppSidebar({
           <nav className="space-y-1 text-xs">
             <button
               type="button"
-              onClick={() => {
-                onQuickFilter?.("", "");
-                onSelectTab("all");
-              }}
+              onClick={() =>
+                handleNavClick(() => {
+                  onQuickFilter?.("", "");
+                  onSelectTab("all");
+                })
+              }
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition cursor-pointer ${
                 activeTab === "all"
                   ? "bg-gradient-to-r from-[#5641e5] to-[#4330c6] text-white border border-[#8e7bff] shadow-[0_0_18px_rgba(105,80,245,0.4)]"
@@ -265,14 +276,16 @@ export function AppSidebar({
 
             <button
               type="button"
-              onClick={() => {
-                onQuickFilter?.("", "");
-                onSelectTab("all");
-                document
-                  .getElementById("projects-section")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-[#b8c6df] hover:text-white hover:bg-[#12192d] transition cursor-pointer"
+              onClick={() =>
+                handleNavClick(() => {
+                  onQuickFilter?.("", "");
+                  onSelectTab("all");
+                  document
+                    .getElementById("projects-section")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                })
+              }
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-[#b8c6df] hover:text-white hover:bg-[#12192d] transition cursor-pointer"
             >
               <span className="flex items-center gap-2.5">
                 <Code2 className="w-4 h-4 text-[#8b9bb8]" /> Projetos
@@ -281,8 +294,10 @@ export function AppSidebar({
 
             <button
               type="button"
-              onClick={() => onSelectTab("telemetry", "diagnostic")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition cursor-pointer ${
+              onClick={() =>
+                handleNavClick(() => onSelectTab("telemetry", "diagnostic"))
+              }
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === "telemetry"
                   ? "bg-gradient-to-r from-[#5641e5] to-[#4330c6] text-white border border-[#8e7bff] shadow-[0_0_18px_rgba(105,80,245,0.4)]"
                   : "text-[#b8c6df] hover:text-white hover:bg-[#12192d]"
@@ -299,8 +314,8 @@ export function AppSidebar({
 
             <button
               type="button"
-              onClick={() => onSelectTab("pinned")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition cursor-pointer ${
+              onClick={() => handleNavClick(() => onSelectTab("pinned"))}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === "pinned"
                   ? "bg-gradient-to-r from-[#5641e5] to-[#4330c6] text-white border border-[#8e7bff]"
                   : "text-[#b8c6df] hover:text-white hover:bg-[#12192d]"
@@ -316,8 +331,8 @@ export function AppSidebar({
 
             <button
               type="button"
-              onClick={() => onSelectTab("online")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition cursor-pointer ${
+              onClick={() => handleNavClick(() => onSelectTab("online"))}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === "online"
                   ? "bg-gradient-to-r from-[#5641e5] to-[#4330c6] text-white border border-[#8e7bff]"
                   : "text-[#b8c6df] hover:text-white hover:bg-[#12192d]"
@@ -343,8 +358,8 @@ export function AppSidebar({
           <div className="space-y-1 text-xs">
             <button
               type="button"
-              onClick={() => onSelectTab("deployments")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition cursor-pointer ${
+              onClick={() => handleNavClick(() => onSelectTab("deployments"))}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === "deployments"
                   ? "bg-[#1a2238] text-white"
                   : "text-[#b8c6df] hover:text-white hover:bg-[#12192d]"
@@ -357,8 +372,8 @@ export function AppSidebar({
 
             <button
               type="button"
-              onClick={onOpenGitlabModal}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-[#b8c6df] hover:text-white hover:bg-[#12192d] transition cursor-pointer"
+              onClick={() => handleNavClick(onOpenGitlabModal)}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-[#b8c6df] hover:text-white hover:bg-[#12192d] transition cursor-pointer"
             >
               <span className="flex items-center gap-2.5">
                 <Layers className="w-4 h-4 text-[#8b9bb8]" /> Integrações & API
@@ -367,8 +382,8 @@ export function AppSidebar({
 
             <button
               type="button"
-              onClick={() => onSelectTab("activity")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition cursor-pointer ${
+              onClick={() => handleNavClick(() => onSelectTab("activity"))}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === "activity"
                   ? "bg-[#1a2238] text-white"
                   : "text-[#b8c6df] hover:text-white hover:bg-[#12192d]"
@@ -382,11 +397,13 @@ export function AppSidebar({
             <button
               type="button"
               onClick={() =>
-                onOpenSettingsModal
-                  ? onOpenSettingsModal()
-                  : onSelectTab("hidden")
+                handleNavClick(() =>
+                  onOpenSettingsModal
+                    ? onOpenSettingsModal()
+                    : onSelectTab("hidden")
+                )
               }
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition cursor-pointer ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === "hidden"
                   ? "bg-[#1a2238] text-white"
                   : "text-[#b8c6df] hover:text-white hover:bg-[#12192d]"
@@ -407,12 +424,14 @@ export function AppSidebar({
 
       {/* Bottom Promo Card: Telemetria & Soluções */}
       <div
-        onClick={() => onSelectTab("telemetry", "diagnostic")}
+        onClick={() =>
+          handleNavClick(() => onSelectTab("telemetry", "diagnostic"))
+        }
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
-            onSelectTab("telemetry", "diagnostic");
+            handleNavClick(() => onSelectTab("telemetry", "diagnostic"));
           }
         }}
         className="relative rounded-2xl p-4 bg-gradient-to-br from-[#12263a] via-[#151836] to-[#26174a] border border-[#38bdf8]/45 shadow-[0_0_25px_rgba(124,92,255,0.22)] hover:border-[#a87ffb] transition cursor-pointer group"

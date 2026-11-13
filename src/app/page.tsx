@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { Menu, X as CloseMenu } from "lucide-react";
+import { MobileNavigation } from "@/components/layout/MobileNavigation";
 import {
   IntegrationConfigStatus,
   Project,
@@ -43,7 +45,8 @@ type NavTab =
   | "deployments"
   | "telemetry"
   | "activity"
-  | "hidden";
+  | "hidden"
+  | "integrations";
 
 async function authedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const token = await getFirebaseIdToken();
@@ -84,6 +87,15 @@ export default function DevCentralDashboard() {
 
   // Navigation & Filters (Compact 4-per-row grid: className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3")
   const [activeTab, setActiveTab] = useState<NavTab>("all");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const escape = (e: KeyboardEvent) => { if (e.key === "Escape") setMobileMenuOpen(false); };
+    window.addEventListener("keydown", escape);
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", escape); };
+  }, [mobileMenuOpen]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
@@ -516,7 +528,39 @@ export default function DevCentralDashboard() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[268px_1fr] bg-[#070a14] text-white">
+    <div className="min-h-screen min-w-0 grid grid-cols-1 lg:grid-cols-[268px_1fr] bg-[#070a14] text-white">
+      {/* Mobile toolbar stays outside desktop sidebar; all actions use existing handlers. */}
+      <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#273254] bg-[#080c17]/95 backdrop-blur-lg px-4 py-3 min-w-0">
+        <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menu" aria-controls="devcentral-mobile-drawer" aria-expanded={mobileMenuOpen}
+          className="min-h-11 min-w-11 grid place-items-center rounded-xl border border-[#344463] bg-[#141c32] text-white">
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="min-w-0 flex-1 text-center">
+          <div className="font-extrabold text-base truncate">DevCentral <span className="text-[#a5b4fc]">3.0</span></div>
+          <div className="text-[10px] text-[#9baac5] truncate">Projetos • Telemetria • Soluções</div>
+        </div>
+        <button type="button" onClick={() => signedUser ? openModal() : handleSignIn()} aria-label="Novo projeto"
+          className="min-h-11 min-w-11 grid place-items-center rounded-xl bg-[#6d4aff] text-white text-xl font-bold">+</button>
+      </div>
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[70] lg:hidden" role="presentation">
+          <button type="button" className="absolute inset-0 bg-black/80" aria-label="Fechar menu" onClick={() => setMobileMenuOpen(false)} />
+          <div id="devcentral-mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu principal" className="absolute inset-y-0 left-0 w-[min(88vw,340px)] overflow-y-auto bg-[#080c17] shadow-2xl">
+            <button type="button" className="sticky top-2 z-10 ml-auto mr-3 mt-2 grid min-h-11 min-w-11 place-items-center rounded-xl border border-[#344463] bg-[#151f35]" aria-label="Fechar menu" onClick={() => setMobileMenuOpen(false)}><CloseMenu className="w-5 h-5" /></button>
+            <div className="[&>aside]:!border-0 [&>aside]:!min-h-0"><AppSidebar
+              activeTab={activeTab}
+              telemetrySubTab={telemetrySubTab}
+              onSelectTab={(tab, sub) => { setActiveTab(tab); if (sub) setTelemetrySubTab(sub); setMobileMenuOpen(false); }}
+              counts={counts} integrationStatus={integrationStatus} lastSync={lastSync} signedUser={signedUser}
+              onSignOut={() => { signOutFirebase(); setMobileMenuOpen(false); }}
+              onOpenGitlabModal={() => { setMobileMenuOpen(false); signedUser ? setGitlabModalOpen(true) : handleSignIn(); }}
+              onOpenSettingsModal={() => { setMobileMenuOpen(false); signedUser ? setSyncKeyModalOpen(true) : handleSignIn(); }}
+              onQuickFilter={(src, acc) => { setSourceFilter(src); setAccountFilter(acc || ""); setActiveTab("all"); setMobileMenuOpen(false); }}
+            /></div>
+          </div>
+        </div>
+      )}
+      <div className="hidden lg:block min-w-0">
       <AppSidebar
         activeTab={activeTab}
         telemetrySubTab={telemetrySubTab}
@@ -541,8 +585,9 @@ export default function DevCentralDashboard() {
           setActiveTab("all");
         }}
       />
+      </div>
 
-      <main className="p-4 sm:p-6 lg:px-8 lg:py-6 max-w-[1640px] w-full mx-auto">
+      <main className="min-w-0 p-4 pb-28 sm:p-6 sm:pb-28 lg:px-8 lg:py-6 max-w-[1640px] w-full mx-auto">
         <AppHeader
           syncing={syncing}
           onSyncClick={() => {
@@ -565,6 +610,7 @@ export default function DevCentralDashboard() {
           onFocusSearch={() =>
             document.getElementById("project-search-input")?.focus()
           }
+          onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
 
         {banner && (
@@ -615,9 +661,23 @@ export default function DevCentralDashboard() {
           <DeploymentStatus
             projects={visibleProjects}
             onPingUrl={handlePingUrl}
+            onSelectProject={setSelectedProject}
           />
         ) : (
           <>
+            {activeTab === "integrations" && (
+              <IntegrationOverview
+                integrationStatus={integrationStatus}
+                projects={visibleProjects}
+                onOpenGitlabModal={() =>
+                  signedUser ? setGitlabModalOpen(true) : handleSignIn()
+                }
+                onSelectSourceFilter={(src, acc) => {
+                  setSourceFilter(src);
+                  setAccountFilter(acc || "");
+                }}
+              />
+            )}
             <OverviewStats
               projects={visibleProjects}
               onOpenGitlabModal={() =>
@@ -657,6 +717,10 @@ export default function DevCentralDashboard() {
                 setLangFilter("");
                 setStateFilter("");
               }}
+              isPinnedTab={activeTab === "pinned"}
+              onTogglePinnedTab={() =>
+                setActiveTab(activeTab === "pinned" ? "all" : "pinned")
+              }
             />
 
             <ProjectGrid
@@ -674,6 +738,11 @@ export default function DevCentralDashboard() {
           </>
         )}
       </main>
+      <MobileNavigation
+        activeTab={activeTab}
+        onNavigate={(tab) => { setActiveTab(tab); setMobileMenuOpen(false); }}
+        onNewProject={() => signedUser ? openModal() : handleSignIn()}
+      />
 
       <ProjectDetails
         project={selectedProject}

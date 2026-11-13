@@ -96,8 +96,20 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
   const sdk = await loadFirebaseBrowserSdk();
   if (!sdk) throw new Error("Firebase SDK indisponível fora do navegador");
   const provider = new sdk.authMod.GoogleAuthProvider();
-  const result = await sdk.authMod.signInWithPopup(sdk.auth, provider);
-  return result.user;
+  try {
+    const result = await sdk.authMod.signInWithPopup(sdk.auth, provider);
+    return result.user;
+  } catch (err: any) {
+    const code = String(err?.code || "");
+    if (
+      code === "auth/popup-blocked" ||
+      code === "auth/operation-not-supported-in-this-environment"
+    ) {
+      await sdk.authMod.signInWithRedirect(sdk.auth, provider);
+      return sdk.auth.currentUser;
+    }
+    throw err;
+  }
 }
 
 export async function signOutFirebase(): Promise<void> {
@@ -113,6 +125,17 @@ export async function getFirebaseIdToken(): Promise<string> {
     throw new Error("Entre no DevCentral para consultar os projetos.");
   }
   return user.getIdToken();
+}
+
+export async function getAdminIdToken(): Promise<string | null> {
+  try {
+    const sdk = await loadFirebaseBrowserSdk();
+    const user: FirebaseUser | null = sdk?.auth?.currentUser || null;
+    if (!user) return null;
+    return await user.getIdToken();
+  } catch {
+    return null;
+  }
 }
 
 export async function initFirebaseAnalytics() {
