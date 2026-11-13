@@ -7,11 +7,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const hasAuthHeader = Boolean(req.headers.get("authorization"));
-  if (hasAuthHeader) {
-    const denied = await requireAdmin(req);
-    if (denied) return denied;
-  }
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   const projectId = req.nextUrl.searchParams.get("projectId") || undefined;
   try {
     const tasks = await listProjectTasks(projectId);

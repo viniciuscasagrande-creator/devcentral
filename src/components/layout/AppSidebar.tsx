@@ -246,6 +246,12 @@ export function AppSidebar({
           </div>
 
           <nav className="space-y-1 text-xs">
+            <a href="/assistente" className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-[#c9befd] hover:text-white hover:bg-[#211b48] font-semibold transition">
+              <span>✦ Assistente de Manutenção</span><span className="text-[10px] text-[#a99aff]">IA</span>
+            </a>
+            <a href="/relatorios" className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-[#c9befd] hover:text-white hover:bg-[#211b48] font-semibold transition">
+              <span>📊 Relatórios de Saúde</span><span className="text-[10px] text-[#3ddba0]">Neon</span>
+            </a>
             <button
               type="button"
               onClick={() =>

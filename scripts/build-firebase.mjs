@@ -312,6 +312,20 @@ await sql`CREATE TABLE IF NOT EXISTS operational_health_daily (
   last_sync_at TIMESTAMPTZ,
   recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )`;
+await sql`
+  CREATE TABLE IF NOT EXISTS maintenance_analyses (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    project_name TEXT NOT NULL,
+    method TEXT NOT NULL CHECK(method IN ('rules','ai')),
+    summary TEXT NOT NULL,
+    findings JSONB NOT NULL DEFAULT '[]'::jsonb,
+    ai_advice TEXT,
+    source_note TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )
+`;
+await sql`CREATE INDEX IF NOT EXISTS maintenance_project_date_idx ON maintenance_analyses (project_id, created_at DESC)`;
 
 const confirmedActiveRecs = initialRecs.filter(
   (r) =>
@@ -837,6 +851,8 @@ a{color:inherit;text-decoration:none}
       <div class="nav-sep">
         <div class="sec-title"><span class="sec-dot"></span>NAVEGAÇÃO</div>
         <nav class="nav">
+          <a href="/assistente" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9befd;border-radius:12px;background:rgba(33,27,72,0.5);border:1px solid rgba(124,92,255,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>✦ &nbsp; Assistente de Manutenção</span><span class="pill-novo">IA</span></a>
+          <a href="/relatorios" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9befd;border-radius:12px;background:rgba(13,46,40,0.35);border:1px solid rgba(45,212,160,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>📊 &nbsp; Relatórios de Saúde</span><span style="font-size:10px;color:#3ddba0;font-weight:800">Neon</span></a>
           <button data-tab="all" class="active"><span>🏠 &nbsp; Visão geral</span><span class="badge" id="nav-total">${totalCount}</span></button>
           <button onclick="window.__resetView();document.getElementById('projects-anchor').scrollIntoView({behavior:'smooth'})"><span>&lt;/&gt; &nbsp; Projetos</span></button>
           <button data-tab="telemetry"><span>📈 &nbsp; Telemetria &amp; Soluções</span><span class="pill-novo">Novo</span></button>
@@ -2694,6 +2710,208 @@ renderReport(SNAPSHOT, 30);
 
 fs.mkdirSync("firebase-dist/relatorios", { recursive: true });
 fs.writeFileSync("firebase-dist/relatorios/index.html", buildReportsHtml(), "utf-8");
+
+function buildAssistantHtml() {
+  const projOptions = safeRows.map((p) => ({ id: p.id, name: p.name, source: p.source }));
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assistente de Manutenção | DevCentral 3.0</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070a14;color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;padding:24px 16px;scrollbar-gutter:stable}
+@media(min-width:640px){body{padding:40px}}
+.wrap{max-width:1152px;margin:0 auto;display:grid;gap:24px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#bac7e3;text-decoration:none;min-height:44px}
+.back:hover{color:#fff}
+.navbtn{padding:10px 12px;border-radius:12px;border:1px solid #334461;background:#151c30;color:#fff;font-size:12px;text-decoration:none}
+.hero{border-radius:18px;border:1px solid rgba(80,68,141,0.6);background:linear-gradient(135deg,#161938,#111b30,#0d222f);padding:24px}
+.panel{border-radius:16px;border:1px solid #293756;background:#111b2e;padding:20px}
+.sel,.btn{min-height:44px;border-radius:12px;border:1px solid #34425f;background:#0b1425;color:#fff;padding:10px 14px;font-size:14px;cursor:pointer}
+.btn-primary{min-height:48px;padding:12px 20px;border-radius:12px;background:linear-gradient(90deg,#6c4bef,#4e6bed);border:0;color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.card{border-radius:14px;border:1px solid #30415f;background:#111b2e;padding:16px;display:grid;gap:10px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <a href="/" class="back">← Voltar ao painel</a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="/telemetria" class="navbtn">Telemetria</a>
+      <a href="/relatorios" class="navbtn">Relatórios</a>
+    </div>
+  </header>
+  <section class="hero">
+    <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:1.6px;font-weight:700;color:#b9a7ff">🤖 DevCentral 3.0 • Central de manutenção</p>
+    <h1 style="margin:12px 0 0;font-size:clamp(24px,4vw,36px);font-weight:900">Assistente Inteligente de Manutenção</h1>
+    <p style="margin:12px 0 0;font-size:14px;color:#afbdd8;max-width:760px">Analisa recomendações, alertas recorrentes e tarefas do Neon. Propõe ações verificáveis sem editar código, executar comandos ou disparar deploys.</p>
+  </section>
+  <section class="panel" style="display:grid;gap:16px">
+    <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
+      <label style="display:block;font-size:14px;font-weight:700;color:#d9e5f9">Projeto
+        <select id="proj-sel" aria-label="Selecionar projeto" class="sel" style="margin-top:8px;width:100%">
+          ${projOptions.map((p) => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.source)})</option>`).join("")}
+        </select>
+      </label>
+      <button type="button" id="btn-analyze" class="btn-primary">✨ Analisar projeto</button>
+    </div>
+    <p style="margin:0;font-size:12px;color:#95a5c2">Modo seguro ativo: diagnóstico por regras sobre os dados sincronizados no Neon. Nenhuma alteração de código ou deploy é executada automaticamente.</p>
+    <div id="notice-box" style="display:none;padding:12px;border-radius:12px;border:1px solid rgba(16,185,129,0.4);background:rgba(6,78,59,0.25);font-size:13px;color:#a7f3d0"></div>
+  </section>
+  <div id="report-box"></div>
+  <section class="panel">
+    <button type="button" id="btn-hist" style="width:100%;text-align:left;background:transparent;border:0;color:#fff;font-weight:800;font-size:14px;display:flex;justify-content:space-between;align-items:center;min-height:44px;cursor:pointer">
+      <span>🕒 Histórico de análises (<span id="hist-count">0</span>)</span>
+      <span id="hist-toggle">+</span>
+    </button>
+    <div id="hist-list" style="display:none;margin-top:12px;gap:8px"></div>
+  </section>
+  <footer style="font-size:12px;color:#8f9fbd">🛡️ As recomendações não alteram arquivos ou deploys. A verificação posterior deve ocorrer na Telemetria Operacional antes de encerrar alertas.</footer>
+</main>
+<script>
+const RECS = ${JSON.stringify(initialRecs).replace(/</g, "\\u003c")};
+const ALERTS = ${JSON.stringify(initialAlerts).replace(/</g, "\\u003c")};
+const PROJS = ${JSON.stringify(projOptions).replace(/</g, "\\u003c")};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let history = JSON.parse(localStorage.getItem("devcentral_maint_history_v3") || "[]");
+let histOpen = false;
+
+function runAnalysis(projectId) {
+  const proj = PROJS.find(p => p.id === projectId);
+  if (!proj) return;
+  const recs = RECS.filter(r => r.projectId === projectId);
+  const alerts = ALERTS.filter(a => a.projectId === projectId && a.state === "active");
+  const findings = recs.map(r => {
+    const rel = alerts.filter(a => a.id.includes(r.id) || a.title.toLowerCase() === r.title.toLowerCase());
+    const recurrence = rel.length ? Math.max(...rel.map(a => a.occurrences || 1)) : 1;
+    return {
+      id: r.id,
+      title: r.title,
+      severity: r.severity,
+      evidence: r.evidence,
+      confidence: r.kind === "preventive_suggestion" ? "possible" : "confirmed",
+      recurrence,
+      steps: (r.steps && r.steps.length ? r.steps : [r.action]).slice(0, 5),
+      commands: (r.commands || []).slice(0, 4),
+      source: "Diagnóstico armazenado no Neon"
+    };
+  });
+  const repeats = findings.filter(f => f.recurrence >= 3);
+  const report = {
+    id: "maint_" + Date.now(),
+    projectId,
+    projectName: proj.name,
+    createdAt: new Date().toISOString(),
+    summary: findings.length
+      ? findings.length + " item(ns) de manutenção identificado(s) para " + proj.name + ". " + repeats.length + " com recorrência registrada de três ou mais ocorrências."
+      : "Nenhuma recomendação ativa encontrada para " + proj.name + " nos dados armazenados.",
+    sourceNote: "Análise baseada em recomendações, alertas e tarefas armazenados no Neon; não substitui inspeção ao vivo.",
+    findings
+  };
+  history = [report, ...history].slice(0, 30);
+  try { localStorage.setItem("devcentral_maint_history_v3", JSON.stringify(history)); } catch {}
+  renderReport(report);
+  renderHistory();
+  const nb = document.getElementById("notice-box");
+  nb.style.display = "block";
+  nb.textContent = "Análise concluída em modo seguro. Nenhuma alteração foi executada nos projetos.";
+}
+
+function renderReport(r) {
+  const sevLabel = { critical: "Crítico", warning: "Atenção", info: "Informativo" };
+  document.getElementById("report-box").innerHTML = \`
+    <div style="display:grid;gap:14px">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <h2 style="margin:0;font-size:18px;font-weight:800">Relatório: \${esc(r.projectName)}</h2>
+          <span style="font-size:12px;color:#9faed0">\${new Date(r.createdAt).toLocaleString("pt-BR")}</span>
+        </div>
+        <p style="margin:12px 0 0;font-size:14px;color:#dae6ff">\${esc(r.summary)}</p>
+        <p style="margin:8px 0 0;font-size:12px;color:#91a2c4">\${esc(r.sourceNote)}</p>
+      </div>
+      <h3 style="margin:4px 0 0;font-size:16px">📋 Recomendações (\${r.findings.length})</h3>
+      \${r.findings.length === 0 ? '<div class="panel" style="font-size:14px;color:#abb9d5">Nenhuma ocorrência ativa encontrada nos registros.</div>' : r.findings.map(f => \`
+        <article class="card">
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <strong style="font-size:15px">\${esc(f.title)}</strong>
+            <span style="font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid #475569;color:#e2e8f0">\${sevLabel[f.severity] || f.severity}</span>
+          </div>
+          <div style="font-size:12px;color:#abb9d5">\${f.confidence==='confirmed'?'Evidência registrada':'Sugestão preventiva'} • \${esc(f.source)} • Recorrências registradas: \${f.recurrence}</div>
+          <div style="font-size:14px;color:#d5e0f4">\${esc(f.evidence)}</div>
+          <ol style="margin:0;padding-left:20px;display:grid;gap:6px;font-size:13.5px;color:#bfd0e8">\${f.steps.map(s => \`<li>\${esc(s)}</li>\`).join("")}</ol>
+          <div>
+            <button type="button" class="sel" onclick="window.__createTaskFromMaint('\${esc(r.projectId)}','\${esc(r.projectName)}','\${esc(f.id)}','\${esc(f.title)}','\${esc(f.severity)}','\${esc(f.evidence)}')">📋 Criar plano de ação</button>
+          </div>
+        </article>
+      \`).join("")}
+    </div>
+  \`;
+}
+
+window.__createTaskFromMaint = (projectId, projectName, recId, title, severity, evidence) => {
+  const tasks = JSON.parse(localStorage.getItem("devcentral_tasks_v3") || "[]");
+  tasks.unshift({
+    id: "task_" + Date.now(),
+    projectId,
+    projectName,
+    recommendationId: recId,
+    title,
+    priority: severity === "critical" ? "high" : severity === "warning" ? "medium" : "low",
+    status: "todo",
+    assignee: "Admin",
+    dueDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+    checklist: [{ id: "step_1", text: "Revisar evidência e aplicar correção com aprovação", done: false }],
+    notes: evidence
+  });
+  try { localStorage.setItem("devcentral_tasks_v3", JSON.stringify(tasks)); } catch {}
+  const nb = document.getElementById("notice-box");
+  nb.style.display = "block";
+  nb.textContent = "Plano de ação criado! Abra Telemetria → Tarefas para acompanhar.";
+};
+
+function renderHistory() {
+  const cur = document.getElementById("proj-sel").value;
+  const list = history.filter(h => h.projectId === cur).slice(0, 12);
+  document.getElementById("hist-count").textContent = String(list.length);
+  const el = document.getElementById("hist-list");
+  el.style.display = histOpen ? "grid" : "none";
+  document.getElementById("hist-toggle").textContent = histOpen ? "−" : "+";
+  el.innerHTML = list.length ? list.map((h, i) => \`
+    <button type="button" class="sel" style="text-align:left;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap" onclick="window.__openHist(\${i})">
+      <span>\${esc(h.summary.slice(0, 140))}</span>
+      <span style="font-size:12px;color:#95a9ca">\${new Date(h.createdAt).toLocaleString("pt-BR")}</span>
+    </button>
+  \`).join("") : '<p style="margin:0;font-size:12px;color:#9cacc8">Nenhuma análise anterior para este projeto.</p>';
+}
+
+window.__openHist = (idx) => {
+  const cur = document.getElementById("proj-sel").value;
+  const list = history.filter(h => h.projectId === cur).slice(0, 12);
+  if (list[idx]) renderReport(list[idx]);
+};
+
+document.getElementById("btn-analyze").onclick = () => runAnalysis(document.getElementById("proj-sel").value);
+document.getElementById("proj-sel").onchange = () => {
+  document.getElementById("report-box").innerHTML = "";
+  renderHistory();
+};
+document.getElementById("btn-hist").onclick = () => {
+  histOpen = !histOpen;
+  renderHistory();
+};
+renderHistory();
+</script>
+</body>
+</html>`;
+}
+
+fs.mkdirSync("firebase-dist/assistente", { recursive: true });
+fs.writeFileSync("firebase-dist/assistente/index.html", buildAssistantHtml(), "utf-8");
 
 console.log(
   `OK: Novo layout DevCentral gerado em firebase-dist/index.html, firebase-dist/telemetria/index.html e firebase-dist/relatorios/index.html (${safeRows.length} projetos públicos em 4 colunas + ${initialRecs.length} diagnósticos).`
