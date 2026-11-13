@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/auth-admin";
 import { getIntegrationStatus, runFullSync } from "@/lib/integrations";
 import { getLastSyncLog, listProjects, listSyncLogs } from "@/lib/db";
 import { scanOperationalAlerts } from "@/lib/alerts";
+import { ensureExternalNotificationsSchema, dispatchExternalNotifications } from "@/lib/external-notifications";
+import { recordDailyHealth } from "@/lib/health-reports";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +109,12 @@ export async function POST(req: NextRequest) {
     syncStartedAt = Date.now();
     try {
       const syncResult = await runFullSync();
+      await ensureExternalNotificationsSchema().catch(() => null);
       await scanOperationalAlerts().catch(() => null);
+      await Promise.all([
+        recordDailyHealth().catch(() => null),
+        dispatchExternalNotifications().catch(() => null),
+      ]);
       const [projects, lastSync, logs] = await Promise.all([
         listProjects(true),
         getLastSyncLog(),

@@ -39,6 +39,7 @@ export async function ensureAlertsSchema(): Promise<void> {
           occurrences INTEGER NOT NULL DEFAULT 1
         )
       `;
+      await sql`ALTER TABLE operational_alerts ADD COLUMN IF NOT EXISTS state_changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`;
       await sql`CREATE INDEX IF NOT EXISTS operational_alerts_state_idx ON operational_alerts (state, last_seen_at DESC)`;
     })().catch((e) => {
       schemaPromise = undefined;
@@ -127,6 +128,7 @@ export async function scanOperationalAlerts() {
         evidence = EXCLUDED.evidence,
         severity = EXCLUDED.severity,
         state = 'active',
+        state_changed_at = CASE WHEN operational_alerts.state = 'recovered' THEN NOW() ELSE operational_alerts.state_changed_at END,
         read_at = CASE WHEN operational_alerts.state = 'recovered' THEN NULL ELSE operational_alerts.read_at END,
         recovered_at = NULL,
         last_seen_at = NOW(),
@@ -137,7 +139,7 @@ export async function scanOperationalAlerts() {
   // Only recover previously active alerts that this scan no longer detected.
   // Use the scan start timestamp to protect against overlapping scans touching fresh alerts.
   await sql`
-    UPDATE operational_alerts SET state = 'recovered', recovered_at = NOW()
+    UPDATE operational_alerts SET state = 'recovered', recovered_at = NOW(), state_changed_at = NOW()
     WHERE state = 'active' AND last_seen_at < ${scanStartedAt}::timestamptz
   `;
   const summary = await listOperationalAlerts();

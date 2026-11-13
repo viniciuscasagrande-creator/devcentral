@@ -288,7 +288,30 @@ await sql`
     occurrences INTEGER NOT NULL DEFAULT 1
   )
 `;
+await sql`ALTER TABLE operational_alerts ADD COLUMN IF NOT EXISTS state_changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`;
 await sql`CREATE INDEX IF NOT EXISTS operational_alerts_state_idx ON operational_alerts (state, last_seen_at DESC)`;
+
+await sql`CREATE TABLE IF NOT EXISTS operational_notification_config (
+  id INTEGER PRIMARY KEY CHECK(id = 1),
+  enabled_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)`;
+await sql`INSERT INTO operational_notification_config (id) VALUES (1) ON CONFLICT DO NOTHING`;
+await sql`CREATE TABLE IF NOT EXISTS operational_notification_deliveries (
+  event_id TEXT NOT NULL, channel TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'processing', attempts INTEGER NOT NULL DEFAULT 1,
+  last_error TEXT NOT NULL DEFAULT '', updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (event_id, channel)
+)`;
+await sql`CREATE TABLE IF NOT EXISTS operational_health_daily (
+  day DATE PRIMARY KEY,
+  projects INTEGER NOT NULL,
+  deploy_failures INTEGER NOT NULL,
+  critical_alerts INTEGER NOT NULL,
+  active_alerts INTEGER NOT NULL,
+  pending_tasks INTEGER NOT NULL,
+  last_sync_at TIMESTAMPTZ,
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)`;
 
 const confirmedActiveRecs = initialRecs.filter(
   (r) =>
@@ -343,6 +366,42 @@ const initialAlerts = alertRows.map((r) => ({
   occurrences: Number(r.occurrences || 1),
 }));
 const initialUnreadAlerts = initialAlerts.filter((a) => a.state === "active" && !a.readAt).length;
+
+const activeAlertCount = initialAlerts.filter((a) => a.state === "active").length;
+const criticalAlertCount = initialAlerts.filter((a) => a.state === "active" && a.severity === "critical").length;
+const deployFailureCount = safeRows.filter((p) => /ERROR|FAILED|FAILURE|CANCELED|CANCELLED/i.test(p.last_deploy_status || "")).length;
+const pendingTaskCount = initialTasks.filter((t) => t.status !== "done").length;
+
+await sql`
+  INSERT INTO operational_health_daily
+    (day, projects, deploy_failures, critical_alerts, active_alerts, pending_tasks, last_sync_at, recorded_at)
+  VALUES
+    (CURRENT_DATE, ${safeRows.length}, ${deployFailureCount}, ${criticalAlertCount},
+     ${activeAlertCount}, ${pendingTaskCount}, ${safeLogs[0]?.synced_at || null}, NOW())
+  ON CONFLICT (day) DO UPDATE SET
+    projects = EXCLUDED.projects,
+    deploy_failures = EXCLUDED.deploy_failures,
+    critical_alerts = EXCLUDED.critical_alerts,
+    active_alerts = EXCLUDED.active_alerts,
+    pending_tasks = EXCLUDED.pending_tasks,
+    last_sync_at = EXCLUDED.last_sync_at,
+    recorded_at = NOW()
+`;
+
+const healthHistoryRows = await sql`
+  SELECT day::text AS day, projects, deploy_failures, critical_alerts, active_alerts, pending_tasks, recorded_at
+  FROM operational_health_daily
+  WHERE day >= CURRENT_DATE - 89
+  ORDER BY day ASC
+`;
+const initialHealthHistory = healthHistoryRows.map((r) => ({
+  day: String(r.day),
+  projects: Number(r.projects),
+  deployFailures: Number(r.deploy_failures),
+  criticalAlerts: Number(r.critical_alerts),
+  activeAlerts: Number(r.active_alerts),
+  pendingTasks: Number(r.pending_tasks),
+}));
 
 const esc = (s) =>
   String(s ?? "").replace(
@@ -837,7 +896,8 @@ a{color:inherit;text-decoration:none}
               </div>
             </div>
             <div id="alerts-bell-list" style="display:grid;gap:8px"></div>
-            <button type="button" onclick="window.__closeAlertsBell();window.__openTelemetryTab()" style="margin-top:10px;min-height:42px;width:100%;border-radius:11px;background:#5b46e8;border:1px solid #7c5cff;color:#fff;font-size:12px;font-weight:800;cursor:pointer">Abrir Telemetria &amp; Soluções</button>
+            <a href="/relatorios" style="margin-top:10px;min-height:42px;width:100%;border-radius:11px;border:1px solid #34415e;background:#151d31;color:#fff;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;text-decoration:none">📊 Relatórios de saúde</a>
+            <button type="button" onclick="window.__closeAlertsBell();window.__openTelemetryTab()" style="margin-top:8px;min-height:42px;width:100%;border-radius:11px;background:#5b46e8;border:1px solid #7c5cff;color:#fff;font-size:12px;font-weight:800;cursor:pointer">Abrir Telemetria &amp; Soluções</button>
           </section>
         </div>
         <button class="auth-pill" id="login-btn">🔒 Entrar com Google (Admin)</button>
@@ -2484,6 +2544,153 @@ fs.writeFileSync(
   buildHtml("telemetry"),
   "utf-8"
 );
+
+function buildReportsHtml() {
+  const activeAlertsList = initialAlerts.filter((a) => a.state === "active").slice(0, 12);
+  const pendingTasksList = initialTasks.filter((t) => t.status !== "done").slice(0, 12);
+  const reportSnapshot = {
+    generatedAt: new Date().toISOString(),
+    source: "Neon PostgreSQL — última sincronização e varreduras registradas",
+    current: {
+      projects: safeRows.length,
+      deployFailures: deployFailureCount,
+      activeAlerts: activeAlertCount,
+      criticalAlerts: criticalAlertCount,
+      pendingTasks: pendingTaskCount,
+      lastSyncAt: safeLogs[0]?.synced_at || null,
+    },
+    history: initialHealthHistory,
+    alerts: activeAlertsList,
+    tasks: pendingTasksList,
+  };
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relatórios de Saúde | DevCentral</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070a14;color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;padding:24px 16px}
+@media(min-width:640px){body{padding:40px}}
+.wrap{max-width:1152px;margin:0 auto;display:grid;gap:24px}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.back{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#abb9d5;text-decoration:none;min-height:44px}
+.back:hover{color:#fff}
+.ctrl{display:flex;gap:8px;align-items:center}
+.sel,.btn{min-height:44px;border-radius:10px;background:#151d31;border:1px solid #34415e;color:#fff;padding:0 12px;font-size:14px;cursor:pointer}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:1024px){.tiles{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.tile,.box{border-radius:14px;background:#111b2e;border:1px solid #293756;padding:16px;min-width:0}
+.tile-val{margin:12px 0 0;font-size:30px;font-weight:800}
+.tile-lbl{margin:4px 0 0;font-size:12px;color:#b7c2d8}
+.grid2{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:1024px){.grid2{grid-template-columns:1fr 1fr}}
+.item{border-radius:10px;background:#0c1425;border:1px solid #263450;padding:12px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top">
+    <a href="/" class="back">← Voltar ao painel</a>
+    <div class="ctrl">
+      <label for="reports-days" style="font-size:12px;color:#abb9d5">Período</label>
+      <select id="reports-days" class="sel">
+        <option value="7">7 dias</option>
+        <option value="30" selected>30 dias</option>
+        <option value="90">90 dias</option>
+      </select>
+      <button type="button" id="btn-reload" class="btn">↻ Atualizar</button>
+    </div>
+  </div>
+  <div>
+    <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:1.6px;color:#a28dfd;font-weight:700">DevCentral 3.0 • Telemetria</p>
+    <h1 style="margin:8px 0 0;font-size:clamp(24px,4vw,36px);font-weight:900">Relatórios de saúde dos projetos</h1>
+    <p style="margin:8px 0 0;font-size:14px;color:#abb9d5">Indicadores do Neon e da última varredura. Não são métricas de disponibilidade contínua.</p>
+  </div>
+  <div id="report-root"></div>
+</main>
+<script>
+const SNAPSHOT = ${JSON.stringify(reportSnapshot).replace(/</g, "\\u003c")};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function renderReport(data, days) {
+  const cutoff = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
+  const history = (data.history || []).filter(h => h.day >= cutoff);
+  const maxAlerts = Math.max(1, ...history.map(x => x.activeAlerts));
+  const tiles = [
+    { label: "Projetos", value: data.current.projects, icon: "📈" },
+    { label: "Alertas ativos", value: data.current.activeAlerts, icon: "🔔" },
+    { label: "Críticos", value: data.current.criticalAlerts, icon: "🛡️" },
+    { label: "Deploys com falha registrada", value: data.current.deployFailures, icon: "⚠️" },
+    { label: "Tarefas pendentes", value: data.current.pendingTasks, icon: "📋" },
+  ];
+  document.getElementById("report-root").innerHTML = \`
+    <div class="tiles">
+      \${tiles.map(t => \`
+        <article class="tile">
+          <div style="font-size:18px">\${t.icon}</div>
+          <p class="tile-val">\${t.value}</p>
+          <p class="tile-lbl">\${esc(t.label)}</p>
+        </article>
+      \`).join("")}
+    </div>
+    <section class="box" style="margin-top:16px">
+      <h2 style="margin:0 0 8px;font-size:16px;font-weight:800">Evolução de alertas ativos</h2>
+      <p style="margin:0 0 16px;font-size:12px;color:#a1adc6">Snapshots diários disponíveis: \${history.length}. Dias sem execução agendada não são preenchidos artificialmente.</p>
+      \${history.length ? \`
+        <div role="img" aria-label="Barras representando o total de alertas ativos em cada dia com registro" style="height:176px;display:flex;align-items:flex-end;gap:8px;overflow-x:auto">
+          \${history.map(day => \`
+            <div title="\${esc(day.day)}: \${day.activeAlerts} alertas ativos" style="flex:1;min-width:24px;max-width:56px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%">
+              <span style="font-size:10px;color:#abb9d5">\${day.activeAlerts}</span>
+              <div style="width:100%;border-radius:6px 6px 0 0;background:linear-gradient(to top,#6552dd,#46bde2);min-height:4px;height:\${Math.max(4, Math.round((day.activeAlerts / maxAlerts) * 80))}%"></div>
+              <span style="font-size:9px;color:#abb9d5">\${esc(day.day.slice(8, 10))}</span>
+            </div>
+          \`).join("")}
+        </div>
+      \` : '<p style="font-size:14px;color:#a1adc6">O histórico aparecerá após a primeira execução do monitoramento agendado.</p>'}
+    </section>
+    <div class="grid2" style="margin-top:16px">
+      <section class="box">
+        <h2 style="margin:0 0 12px;font-size:16px;font-weight:800">Alertas prioritários</h2>
+        \${data.alerts.length ? \`<div style="display:grid;gap:8px">\${data.alerts.map(a => \`
+          <div class="item">
+            <div style="display:flex;justify-content:space-between;gap:8px">
+              <span style="font-size:12px;color:#a5b4fc;word-break:break-all">\${esc(a.projectName)}</span>
+              <span style="font-size:12px;font-weight:700;color:\${a.severity==='critical'?'#fca5a5':'#fcd34d'}">\${a.severity==='critical'?'Crítico':'Atenção'}</span>
+            </div>
+            <p style="margin:6px 0 0;font-size:14px">\${esc(a.title)}</p>
+          </div>
+        \`).join("")}</div>\` : '<p style="font-size:14px;color:#a1adc6">Nenhum alerta ativo na última varredura.</p>'}
+      </section>
+      <section class="box">
+        <h2 style="margin:0 0 12px;font-size:16px;font-weight:800">Planos de ação pendentes</h2>
+        \${data.tasks.length ? \`<div style="display:grid;gap:8px">\${data.tasks.map(t => \`
+          <div class="item">
+            <p style="margin:0;font-size:12px;color:#a5b4fc">\${esc(t.projectName)} • \${t.priority==='high'?'Alta prioridade':t.priority==='medium'?'Média prioridade':'Baixa prioridade'}</p>
+            <p style="margin:6px 0 0;font-size:14px">\${esc(t.title)}</p>
+          </div>
+        \`).join("")}</div>\` : '<p style="font-size:14px;color:#a1adc6">Nenhuma tarefa pendente.</p>'}
+      </section>
+    </div>
+    <p style="margin:16px 0 0;font-size:12px;color:#8291af">Atualizado em \${new Date(data.generatedAt).toLocaleString("pt-BR")}. Última sincronização: \${data.current.lastSyncAt ? new Date(data.current.lastSyncAt).toLocaleString("pt-BR") : "sem registro"}. \${esc(data.source)}.</p>
+  \`;
+}
+
+const sel = document.getElementById("reports-days");
+sel.onchange = () => renderReport(SNAPSHOT, Number(sel.value));
+document.getElementById("btn-reload").onclick = () => renderReport(SNAPSHOT, Number(sel.value));
+renderReport(SNAPSHOT, 30);
+</script>
+</body>
+</html>`;
+}
+
+fs.mkdirSync("firebase-dist/relatorios", { recursive: true });
+fs.writeFileSync("firebase-dist/relatorios/index.html", buildReportsHtml(), "utf-8");
+
 console.log(
-  `OK: Novo layout DevCentral gerado em firebase-dist/index.html e firebase-dist/telemetria/index.html (${safeRows.length} projetos públicos em 4 colunas + ${initialRecs.length} diagnósticos).`
+  `OK: Novo layout DevCentral gerado em firebase-dist/index.html, firebase-dist/telemetria/index.html e firebase-dist/relatorios/index.html (${safeRows.length} projetos públicos em 4 colunas + ${initialRecs.length} diagnósticos).`
 );

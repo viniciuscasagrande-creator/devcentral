@@ -5,6 +5,8 @@ import {
   markOperationalAlertRead,
   scanOperationalAlerts,
 } from "@/lib/alerts";
+import { ensureExternalNotificationsSchema, dispatchExternalNotifications } from "@/lib/external-notifications";
+import { recordDailyHealth } from "@/lib/health-reports";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,7 +28,13 @@ export async function POST(req: NextRequest) {
   const denied = await requireAdmin(req);
   if (denied) return denied;
   try {
-    return NextResponse.json(await scanOperationalAlerts(), { headers: privateHeaders });
+    await ensureExternalNotificationsSchema();
+    const scan = await scanOperationalAlerts();
+    const [health, deliveries] = await Promise.all([
+      recordDailyHealth(),
+      dispatchExternalNotifications(),
+    ]);
+    return NextResponse.json({ ...scan, health, deliveries }, { headers: privateHeaders });
   } catch (e) {
     console.error("Falha na análise de alertas", e);
     return NextResponse.json({ error: "Não foi possível analisar os alertas." }, { status: 500 });

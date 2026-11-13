@@ -144,7 +144,8 @@ export function AlertsBell({
                 </article>
               ))}
             </div>
-            <button type="button" onClick={() => { setOpen(false); onOpenTelemetry(); }} className="mt-3 min-h-11 w-full rounded-xl bg-[#5b46e8] hover:bg-[#725cf7] text-xs font-bold text-white cursor-pointer">Abrir Telemetria & Soluções</button>
+            <a href="/relatorios" className="mt-3 min-h-11 w-full rounded-xl border border-[#34415e] bg-[#151d31] hover:bg-[#1b2843] text-xs font-bold text-white inline-flex items-center justify-center">📊 Relatórios de saúde</a>
+            <button type="button" onClick={() => { setOpen(false); onOpenTelemetry(); }} className="mt-2 min-h-11 w-full rounded-xl bg-[#5b46e8] hover:bg-[#725cf7] text-xs font-bold text-white cursor-pointer">Abrir Telemetria & Soluções</button>
           </section>
         </>
       )}

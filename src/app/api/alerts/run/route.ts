@@ -1,6 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { scanOperationalAlerts } from "@/lib/alerts";
+import { ensureExternalNotificationsSchema, dispatchExternalNotifications } from "@/lib/external-notifications";
+import { recordDailyHealth } from "@/lib/health-reports";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +22,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
   try {
-    return NextResponse.json(await scanOperationalAlerts(), {
+    // Prepare baseline before the scan so old alerts are not sent by default.
+    await ensureExternalNotificationsSchema();
+    const scan = await scanOperationalAlerts();
+    const [health, deliveries] = await Promise.all([
+      recordDailyHealth(),
+      dispatchExternalNotifications(),
+    ]);
+    return NextResponse.json({ ...scan, health, deliveries }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (e) {
