@@ -1,18 +1,16 @@
 {
-  "name": "DevCentral 3.0 — Workspace & Telemetria",
+  "name": "DevCentral 4.0 — Central Inteligente de Desenvolvimento",
   "short_name": "DevCentral",
-  "description": "Workspace multi-contas para GitHub, GitLab, Vercel, Neon DB e Telemetria & Soluções.",
+  "description": "Workspace de projetos, telemetria, copiloto contextual, revisão de PRs e relatórios.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#070a14",
   "theme_color": "#070a14",
   "orientation": "any",
   "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/devcentral-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/devcentral-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

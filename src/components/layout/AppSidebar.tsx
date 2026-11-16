@@ -246,6 +246,10 @@ export function AppSidebar({
           </div>
 
           <nav className="space-y-1 text-xs">
+            {/* DEVCENTRAL_V4_NAV: link independente para preservar o menu 3.0 */}
+            <a href="/central-4" className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold border border-[#5b4bd7]/50 bg-[#3d3188]/20 text-[#c9bfff] hover:bg-[#3d3188]/40 transition" >
+              <span aria-hidden="true">✦</span> Central Inteligente 4.0
+            </a>
             <a href="/operacoes" className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-[#a5f3fc] hover:text-white hover:bg-[#123444] font-semibold transition">
               <span>⚙ Operações inteligentes</span><span className="text-[10px] text-[#67e8f9]">4.2–4.5</span>
             </a>
