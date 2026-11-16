@@ -29,6 +29,10 @@
         "destination": "/central-4/index.html"
       },
       {
+        "source": "/central-41",
+        "destination": "/central-41/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

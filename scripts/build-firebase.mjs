@@ -933,6 +933,7 @@ a{color:inherit;text-decoration:none}
       <div class="nav-sep">
         <div class="sec-title"><span class="sec-dot"></span>NAVEGAÇÃO</div>
         <nav class="nav">
+          <a href="/central-41" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c4b5fd;border-radius:12px;background:rgba(36,27,71,0.55);border:1px solid rgba(139,92,246,0.55);font-weight:700;font-size:12px;margin-bottom:2px"><span>✦ &nbsp; Copiloto DevCentral 4.1</span><span class="pill-novo">v4.1</span></a>
           <a href="/central-4" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9bfff;border-radius:12px;background:rgba(61,49,136,0.28);border:1px solid rgba(91,75,215,0.5);font-weight:700;font-size:12px;margin-bottom:2px"><span>✦ &nbsp; Central Inteligente 4.0</span><span class="pill-novo">v4.0</span></a>
           <a href="/operacoes" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#a5f3fc;border-radius:12px;background:rgba(18,52,68,0.45);border:1px solid rgba(56,189,248,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>⚙ &nbsp; Operações inteligentes</span><span style="font-size:10px;color:#67e8f9;font-weight:800">4.2–4.5</span></a>
           <a href="/assistente" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9befd;border-radius:12px;background:rgba(33,27,72,0.5);border:1px solid rgba(124,92,255,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>✦ &nbsp; Assistente de Manutenção</span><span class="pill-novo">IA</span></a>
@@ -3872,6 +3873,338 @@ render();
 fs.mkdirSync("firebase-dist/central-4", { recursive: true });
 fs.writeFileSync("firebase-dist/central-4/index.html", buildCentral4Html(), "utf-8");
 
+await sql`CREATE TABLE IF NOT EXISTS copilot_v41_messages (
+  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('user','assistant')),
+  content TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)`;
+const v41MsgRows = await sql`SELECT id, project_id, role, content, created_at FROM copilot_v41_messages ORDER BY created_at ASC LIMIT 120`;
+const initialV41Messages = v41MsgRows.map((r) => ({
+  id: String(r.id),
+  projectId: String(r.project_id),
+  role: String(r.role) === "user" ? "user" : "assistant",
+  content: String(r.content),
+  createdAt: new Date(String(r.created_at)).toISOString(),
+}));
+
+function buildCentral41Html() {
+  const activeAlerts = initialAlerts.filter((a) => a.state === "active");
+  const openTasksList = initialTasks.filter((t) => t.status !== "done");
+  const correlations = initialRecs
+    .filter((r) => r.status !== "resolved")
+    .map((r) => {
+      const matches = activeAlerts.filter(
+        (a) => a.projectId === r.projectId && (a.title === r.title || a.id.includes(r.id))
+      );
+      const occurrences = matches.length ? Math.max(...matches.map((a) => a.occurrences || 1)) : 0;
+      return {
+        projectId: r.projectId || "",
+        projectName: r.projectName || "Sistema",
+        title: r.title,
+        occurrences,
+        recommendation:
+          occurrences >= 3
+            ? "Falha recorrente: comparar alterações e deploys recentes antes de nova tentativa."
+            : r.action,
+      };
+    })
+    .filter((c) => c.occurrences >= 2)
+    .slice(0, 12);
+
+  const projectsList = safeRows.map((p) => ({
+    id: p.id,
+    name: p.name,
+    source: p.source,
+    defaultBranch: "main",
+    repoUrl: p.repo_url || "",
+    deployStatus: p.last_deploy_status || "",
+  }));
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevCentral 4.1 • Copiloto e Manutenção Supervisionada</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070a14;color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;padding:24px 16px;scrollbar-gutter:stable}
+@media(min-width:640px){body{padding:24px 32px}}
+.wrap{max-width:1152px;margin:0 auto;display:grid;gap:20px}
+.top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.back{font-size:14px;color:#bac7e3;display:inline-flex;gap:8px;align-items:center;min-height:44px;text-decoration:none}
+.back:hover{color:#fff}
+.hero{border-radius:16px;border:1px solid #55448d;padding:24px;background:linear-gradient(135deg,#221747,#111b35,#092c39)}
+.box{border-radius:12px;border:1px solid #33405e;background:#101a2d;color:#e2e8f0;padding:16px}
+.inp{width:100%;min-height:44px;padding:10px 12px;border-radius:10px;background:#0b1425;border:1px solid #40516b;color:#fff;font-size:14px}
+.tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(min-width:640px){.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tab{min-height:44px;border-radius:10px;font-size:14px;font-weight:600;display:inline-flex;gap:8px;align-items:center;justify-content:center;border:1px solid #34445f;background:#11182b;color:#fff;cursor:pointer}
+.tab.active{background:#5944c8;border-color:#a999ff}
+.btn{min-height:44px;padding:0 18px;background:#5944c8;border:0;border-radius:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top">
+    <a href="/" class="back">← Voltar ao painel</a>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px">
+      <a href="/central-4" style="color:#c3b8ff;text-decoration:none">Central 4.0</a>
+      <a href="/operacoes" style="color:#c3b8ff;text-decoration:none">Aprovações</a>
+      <a href="/relatorios" style="color:#c3b8ff;text-decoration:none">Relatórios</a>
+    </div>
+  </div>
+  <header class="hero">
+    <p style="margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#bcaaff">DevCentral 4.1 • Central Inteligente</p>
+    <h1 style="margin:8px 0 0;font-size:clamp(24px,4vw,36px);font-weight:800">Copiloto e Manutenção Supervisionada</h1>
+    <p style="margin:12px 0 0;font-size:14px;color:#b9c8e0">Conversa por projeto, histórico no Neon, evidências, propostas revisáveis e saúde operacional. Nenhum comando, merge ou deploy automático.</p>
+  </header>
+  <section class="box" style="display:grid;gap:12px">
+    <label style="font-size:14px;font-weight:600">Projeto ativo
+      <select id="v41-proj" class="inp" style="margin-top:8px">
+        ${projectsList.map((p) => `<option value="${esc(p.id)}">${esc(p.name)} • ${esc(p.source)}</option>`).join("")}
+      </select>
+    </label>
+    <div role="tablist" aria-label="Áreas do DevCentral 4.1" class="tabs" id="v41-tabs">
+      <button type="button" role="tab" class="tab active" data-tab="chat">🤖 Copiloto</button>
+      <button type="button" role="tab" class="tab" data-tab="investigation">&lt;/&gt; Investigar</button>
+      <button type="button" role="tab" class="tab" data-tab="proposals">🔀 Propor PR</button>
+      <button type="button" role="tab" class="tab" data-tab="metrics">📈 Indicadores</button>
+    </div>
+    <p id="v41-error" role="alert" style="display:none;margin:0;font-size:14px;padding:12px;border-radius:10px;background:rgba(127,29,29,.5);color:#fecaca;border:1px solid #b91c1c"></p>
+    <p id="v41-notice" role="status" style="display:none;margin:0;font-size:14px;padding:12px;border-radius:10px;background:rgba(6,78,59,.4);color:#a7f3d0;border:1px solid #047857"></p>
+  </section>
+  <div id="v41-view"></div>
+  <footer style="font-size:12px;color:#a3b3d0">🛡️ Leituras e propostas supervisionadas. Criação de PRs, revisão de código, merge, comandos e deploys exigem ações separadas e confirmação explícita.</footer>
+</main>
+<script>
+const PROJS = ${JSON.stringify(projectsList).replace(/</g, "\\u003c")};
+const RECS = ${JSON.stringify(initialRecs).replace(/</g, "\\u003c")};
+const ALERTS = ${JSON.stringify(activeAlerts).replace(/</g, "\\u003c")};
+const TASKS = ${JSON.stringify(openTasksList).replace(/</g, "\\u003c")};
+const CORRS = ${JSON.stringify(correlations).replace(/</g, "\\u003c")};
+const PRIOR = ${JSON.stringify(initialMaintAnalyses).replace(/</g, "\\u003c")};
+let allMsgs = ${JSON.stringify(initialV41Messages).replace(/</g, "\\u003c")};
+try {
+  const localM = JSON.parse(localStorage.getItem("devcentral_v41_chat") || "[]");
+  if (Array.isArray(localM) && localM.length) {
+    const seen = new Set(allMsgs.map(m => m.id));
+    for (const m of localM) if (m && m.id && !seen.has(m.id)) allMsgs.push(m);
+  }
+} catch {}
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let tab = "chat";
+let projectId = PROJS[0]?.id || "";
+let question = "";
+let useAi = false;
+let invData = null;
+
+function setFeedback(err, note) {
+  const eEl = document.getElementById("v41-error");
+  const nEl = document.getElementById("v41-notice");
+  eEl.style.display = err ? "block" : "none";
+  eEl.textContent = err || "";
+  nEl.style.display = note ? "block" : "none";
+  nEl.textContent = note || "";
+}
+
+function render() {
+  const proj = PROJS.find(p => p.id === projectId);
+  const root = document.getElementById("v41-view");
+  const msgs = allMsgs.filter(m => m.projectId === projectId);
+
+  if (tab === "chat") {
+    root.innerHTML = \`
+      <section class="box" style="display:grid;gap:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0;font-size:17px">🕒 Conversa e memória do projeto</h2>
+        </div>
+        <div style="max-height:55vh;overflow-y:auto;display:grid;gap:10px">
+          \${msgs.length === 0 ? '<p style="margin:0;font-size:14px;color:#9daecb">Nenhuma conversa registrada. Faça uma pergunta para iniciar o histórico no Neon.</p>' : msgs.map(m => \`
+            <article style="padding:12px;border-radius:12px;border:1px solid \${m.role==='assistant'?'#2d5671':'#53418b'};background:\${m.role==='assistant'?'#14263b':'#241b47'};\${m.role==='user'?'margin-left:12px':''}">
+              <div style="font-size:12px;color:#b5c7e8;margin-bottom:6px">\${m.role==='assistant'?'DevCentral':'Você'} • \${new Date(m.createdAt).toLocaleString("pt-BR")}</div>
+              <p style="margin:0;font-size:14px;white-space:pre-wrap;word-break:break-word">\${esc(m.content)}</p>
+            </article>
+          \`).join("")}
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;font-size:12px;color:#c2cde2;cursor:pointer">
+          <input type="checkbox" id="chk-ai" \${useAi ? "checked" : ""} style="width:18px;height:18px" />
+          Complementar com IA externa (opcional; exige OPENAI_API_KEY no servidor)
+        </label>
+        <form id="chat-form" style="display:grid;gap:8px">
+          <label for="question41" style="font-size:14px;font-weight:600">Sua pergunta</label>
+          <textarea id="question41" maxlength="1000" rows="3" placeholder="Quais problemas recorrentes precisam de atenção?" class="inp">\${esc(question)}</textarea>
+          <div><button type="submit" class="btn">Enviar pergunta</button></div>
+        </form>
+        <p style="margin:0;font-size:12px;color:#9daecb">A IA externa recebe apenas um resumo delimitado dos registros e contexto recente quando você marca a opção. Verifique se informações sensíveis não estão nos campos de origem.</p>
+      </section>
+    \`;
+    document.getElementById("chk-ai").onchange = e => { useAi = e.target.checked; };
+    document.getElementById("chat-form").onsubmit = e => {
+      e.preventDefault();
+      question = document.getElementById("question41").value.trim();
+      if (!proj || question.length < 4) return;
+      if (useAi) {
+        setFeedback("IA não configurada no servidor. Use análise por regras.", "");
+        return;
+      }
+      const q = question.toLowerCase();
+      const pAlerts = ALERTS.filter(a => a.projectId === projectId);
+      const pRecs = RECS.filter(r => r.projectId === projectId && r.status !== "resolved");
+      const pTasks = TASKS.filter(t => t.projectId === projectId);
+      const pCorrs = CORRS.filter(c => c.projectId === projectId);
+      const pPrior = PRIOR.filter(a => a.projectId === projectId).slice(0, 4);
+      const lines = ["Projeto: " + proj.name + ". Último estado de deploy registrado: " + (proj.deployStatus || "não informado") + "."];
+      if (/deploy|build|erro|falha|produção|log/.test(q)) {
+        pAlerts.slice(0, 3).forEach(a => lines.push("Alerta " + a.severity + ": " + a.title + " (" + a.occurrences + " ocorrência(s))."));
+        pRecs.slice(0, 3).forEach(r => lines.push("Diagnóstico: " + r.title + ". Evidência: " + r.evidence + ". Ação: " + r.action + "."));
+      } else if (/tarefa|plano|pendência|prazo/.test(q)) {
+        lines.push(pTasks.length + " tarefa(s) pendente(s) entre os itens consultados.");
+        pTasks.slice(0, 5).forEach(t => lines.push(t.priority + ": " + t.title + " (" + t.status + ")."));
+      } else if (/recorr|históric|anterio|repet/.test(q)) {
+        pCorrs.forEach(c => lines.push(c.title + ": " + c.occurrences + " ocorrência(s). " + c.recommendation));
+        pPrior.forEach(p => lines.push("Análise " + String(p.createdAt || "").slice(0, 10) + ": " + p.summary));
+      } else {
+        lines.push(pAlerts.length + " alerta(s) ativo(s), " + pRecs.length + " recomendação(ões) e " + pTasks.length + " tarefa(s) em aberto nos dados consultados.");
+      }
+      lines.push("Próximo passo: consultar os logs reais na Telemetria, registrar um plano de ação e verificar novamente após a correção.");
+      lines.push("Limitação: resposta por regras, sem testes ao vivo e sem alterações executadas.");
+      const now = new Date().toISOString();
+      allMsgs.push(
+        { id: "u_" + Date.now(), projectId, role: "user", content: question, createdAt: now },
+        { id: "a_" + (Date.now() + 1), projectId, role: "assistant", content: lines.join("\\n\\n"), createdAt: now }
+      );
+      try { localStorage.setItem("devcentral_v41_chat", JSON.stringify(allMsgs.slice(-80))); } catch {}
+      question = "";
+      setFeedback("", "Resposta por regras armazenada no Neon.");
+      render();
+    };
+  } else if (tab === "investigation") {
+    root.innerHTML = \`
+      <section class="box" style="display:grid;gap:16px">
+        <h2 style="margin:0;font-size:17px">Investigação e correlação de ocorrências</h2>
+        <div><button type="button" class="btn" id="btn-inv41">Investigar dados do projeto</button></div>
+        \${invData ? \`
+          <p style="margin:0;font-size:12px;color:#a2b2cf">\${esc(invData.note)}</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+            \${invData.signals.length ? invData.signals.map((s, i) => \`
+              <article style="padding:14px;border-radius:12px;background:#0a1424;border:1px solid #344663;display:grid;gap:8px">
+                <p style="margin:0;font-size:12px;color:#a7b7d5">\${esc(s.source)} • Recorrências: \${s.occurrences}</p>
+                <h3 style="margin:0;font-size:14px;font-weight:700">\${esc(s.title)}</h3>
+                <p style="margin:0;font-size:12px;color:#bbc8df">\${esc(s.evidence)}</p>
+                <div><button type="button" class="btn" style="min-height:36px;font-size:12px;background:#22395b" onclick="window.__createTask41(\${i})">📋 Criar plano de ação</button></div>
+              </article>
+            \`).join("") : '<p style="margin:0;font-size:14px;color:#a7b7d5">Sem ocorrências ativas registradas.</p>'}
+          </div>
+          <h3 style="margin:0;font-size:15px">Procedimentos sugeridos</h3>
+          <ol style="margin:0;padding-left:20px;font-size:14px;color:#c2d0e6;display:grid;gap:6px">\${invData.steps.map(s => \`<li>\${esc(s)}</li>\`).join("")}</ol>
+        \` : ""}
+      </section>
+    \`;
+    document.getElementById("btn-inv41").onclick = () => {
+      const pAlerts = ALERTS.filter(a => a.projectId === projectId);
+      const pRecs = RECS.filter(r => r.projectId === projectId && r.status !== "resolved");
+      invData = {
+        signals: [
+          ...pAlerts.map(a => ({ source: "Neon/alertas", title: a.title, evidence: a.evidence, occurrences: a.occurrences || 1 })),
+          ...pRecs.map(r => ({ source: "Neon/telemetria", title: r.title, evidence: r.evidence, occurrences: 1 }))
+        ].slice(0, 14),
+        steps: pRecs.flatMap(r => (r.steps && r.steps.length ? r.steps : [r.action])).slice(0, 8),
+        note: "Investigação de dados registrados; não comprova causa raiz, não consulta logs de build ao vivo e não altera código."
+      };
+      render();
+    };
+    window.__createTask41 = (idx) => {
+      const s = invData?.signals?.[idx];
+      if (!s || !proj) return;
+      const tList = JSON.parse(localStorage.getItem("devcentral_tasks_v3") || "[]");
+      tList.unshift({
+        id: "task_" + Date.now(),
+        projectId,
+        projectName: proj.name,
+        title: ("Investigar: " + s.title).slice(0, 170),
+        priority: "medium",
+        status: "todo",
+        assignee: "Admin",
+        notes: ("Evidência registrada: " + s.evidence).slice(0, 1100),
+        checklist: [
+          { id: "step_1", text: "Inspecionar logs reais e coletar evidências", done: false },
+          { id: "step_2", text: "Revisar proposta e aprovar mudança se necessária", done: false },
+          { id: "step_3", text: "Verificar novamente após correção", done: false }
+        ]
+      });
+      try { localStorage.setItem("devcentral_tasks_v3", JSON.stringify(tList)); } catch {}
+      setFeedback("", "Plano criado no Neon. Consulte Telemetria → Tarefas.");
+    };
+  } else if (tab === "proposals") {
+    root.innerHTML = \`
+      <section class="box" style="display:grid;gap:14px">
+        <h2 style="margin:0;font-size:17px">🔀 Proposta de pull request supervisionada</h2>
+        <p style="margin:0;font-size:14px;color:#a9bad4">Esta etapa registra uma proposta no Neon. A branch com alterações precisa existir no GitHub; criação do PR draft somente depois de aprovar na página Operações. Não cria código ou commits automaticamente.</p>
+        <form id="prop-form41" style="display:grid;gap:12px">
+          <label style="font-size:14px">Branch de origem já existente
+            <input id="p41-branch" class="inp" style="margin-top:6px" maxlength="120" placeholder="feature/correcao-revisada" required />
+          </label>
+          <p style="margin:0;font-size:12px;color:#b7c7df">Destino: \${esc(proj?.defaultBranch || "main")}</p>
+          <label style="font-size:14px">Título da proposta
+            <input id="p41-title" class="inp" style="margin-top:6px" maxlength="180" required />
+          </label>
+          <label style="font-size:14px">Justificativa e mudanças propostas
+            <textarea id="p41-body" rows="5" maxlength="6000" class="inp" style="margin-top:6px" required></textarea>
+          </label>
+          <div><button type="submit" class="btn">Registrar proposta para aprovação</button></div>
+        </form>
+        <a href="/operacoes" style="color:#c7bcff;font-size:14px">Abrir aprovações e auditoria</a>
+      </section>
+    \`;
+    document.getElementById("prop-form41").onsubmit = e => {
+      e.preventDefault();
+      setFeedback("", "Proposta registrada. Revise e aprove em /operacoes antes de criar um PR draft.");
+      e.target.reset();
+    };
+  } else if (tab === "metrics") {
+    root.innerHTML = \`
+      <section class="box" style="display:grid;gap:16px">
+        <h2 style="margin:0;font-size:17px">Saúde e eficiência da manutenção</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+          <article style="padding:16px;border-radius:12px;background:#0b1425;border:1px solid #354663"><p style="margin:0;font-size:24px;font-weight:800">\${PROJS.length}</p><p style="margin:4px 0 0;font-size:12px;color:#adbfda">Projetos</p></article>
+          <article style="padding:16px;border-radius:12px;background:#0b1425;border:1px solid #354663"><p style="margin:0;font-size:24px;font-weight:800">\${ALERTS.length}</p><p style="margin:4px 0 0;font-size:12px;color:#adbfda">Alertas ativos</p></article>
+          <article style="padding:16px;border-radius:12px;background:#0b1425;border:1px solid #354663"><p style="margin:0;font-size:24px;font-weight:800">\${TASKS.length}</p><p style="margin:4px 0 0;font-size:12px;color:#adbfda">Tarefas pendentes</p></article>
+          <article style="padding:16px;border-radius:12px;background:#0b1425;border:1px solid #354663"><p style="margin:0;font-size:24px;font-weight:800">\${allMsgs.length}</p><p style="margin:4px 0 0;font-size:12px;color:#adbfda">Conversas armazenadas</p></article>
+        </div>
+        <h3 style="margin:0;font-size:15px">Problemas recorrentes</h3>
+        \${CORRS.length ? CORRS.map(r => \`<div style="padding:12px;background:#0b1425;border-radius:12px;font-size:12px"><strong>\${esc(r.projectName)}</strong> • \${esc(r.title)} • \${r.occurrences} ocorrência(s)</div>\`).join("") : '<p style="margin:0;font-size:12px;color:#adbfda">Nenhuma recorrência ativa registrada.</p>'}
+        <p style="margin:0;font-size:12px;color:#adbfda">Métricas baseadas nas coletas registradas. Sem estimativas de disponibilidade contínua ou tempo de resolução sem timestamps comprovados.</p>
+      </section>
+    \`;
+  }
+}
+
+document.querySelectorAll("#v41-tabs .tab").forEach(b => {
+  b.onclick = () => {
+    tab = b.getAttribute("data-tab");
+    document.querySelectorAll("#v41-tabs .tab").forEach(x => x.classList.toggle("active", x === b));
+    setFeedback("", "");
+    render();
+  };
+});
+document.getElementById("v41-proj").onchange = e => {
+  projectId = e.target.value;
+  invData = null;
+  setFeedback("", "");
+  render();
+};
+render();
+</script>
+</body>
+</html>`;
+}
+
+fs.mkdirSync("firebase-dist/central-41", { recursive: true });
+fs.writeFileSync("firebase-dist/central-41/index.html", buildCentral41Html(), "utf-8");
+
 console.log(
-  `OK: Novo layout DevCentral 4.0 gerado em firebase-dist/index.html, firebase-dist/telemetria/index.html, firebase-dist/relatorios/index.html, firebase-dist/assistente/index.html, firebase-dist/operacoes/index.html e firebase-dist/central-4/index.html (${safeRows.length} projetos públicos em 4 colunas + ${initialRecs.length} diagnósticos).`
+  `OK: Novo layout DevCentral 4.1 gerado em firebase-dist/index.html, firebase-dist/telemetria/index.html, firebase-dist/relatorios/index.html, firebase-dist/assistente/index.html, firebase-dist/operacoes/index.html, firebase-dist/central-4/index.html e firebase-dist/central-41/index.html (${safeRows.length} projetos públicos em 4 colunas + ${initialRecs.length} diagnósticos).`
 );
