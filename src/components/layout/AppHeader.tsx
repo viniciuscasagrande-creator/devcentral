@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Search,
   Bell,
@@ -13,8 +13,11 @@ import {
   Plus,
   LogOut,
   Menu,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import { FirebaseUser } from "@/lib/firebase";
+import { Project } from "@/types/project";
 import { AlertsBell } from "@/components/alerts/AlertsBell";
 
 interface AppHeaderProps {
@@ -28,6 +31,10 @@ interface AppHeaderProps {
   onSignOutClick?: () => void;
   onFocusSearch?: () => void;
   onOpenMobileMenu?: () => void;
+  searchQuery?: string;
+  onSearchChange?: (q: string) => void;
+  projects?: Project[];
+  onSelectProject?: (p: Project) => void;
 }
 
 export function AppHeader({
@@ -40,8 +47,50 @@ export function AppHeader({
   onSignOutClick,
   onFocusSearch,
   onOpenMobileMenu,
+  searchQuery = "",
+  onSearchChange,
+  projects = [],
+  onSelectProject,
 }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const quickSearchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => quickSearchInputRef.current?.focus(), 20);
+    }
+  }, [searchOpen]);
+
+  const matchingProjects = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const list = projects.filter((p) => !p.is_hidden);
+    if (!q) return list.slice(0, 6);
+    return list
+      .filter((p) =>
+        [
+          p.name,
+          p.description,
+          p.tech,
+          p.source,
+          ...(p.vercel_accounts || []),
+          ...(p.tags || []),
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      )
+      .slice(0, 8);
+  }, [projects, searchQuery]);
+
+  const handleToggleSearch = () => {
+    setSearchOpen((prev) => {
+      const next = !prev;
+      if (!next) return false;
+      onTabChange?.("all");
+      return true;
+    });
+  };
 
   return (
     <div className="space-y-4 mb-5">
@@ -61,15 +110,129 @@ export function AppHeader({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           <button
             type="button"
-            onClick={onFocusSearch}
-            className="w-10 h-10 rounded-full bg-[#101729] border border-[#222e4a] text-[#9baac5] hover:text-white hover:border-[#4b5d88] grid place-items-center transition cursor-pointer"
-            title="Pesquisar (Ctrl + K)"
+            onClick={handleToggleSearch}
+            aria-label="Abrir busca rápida de projetos"
+            aria-expanded={searchOpen}
+            className={`w-10 h-10 rounded-full border grid place-items-center transition cursor-pointer ${
+              searchOpen || searchQuery
+                ? "bg-[#5641e5] border-[#8e7bff] text-white shadow-[0_0_14px_rgba(91,70,232,0.5)]"
+                : "bg-[#101729] border-[#222e4a] text-[#9baac5] hover:text-white hover:border-[#4b5d88]"
+            }`}
+            title="Pesquisar projetos (Ctrl + K)"
           >
             <Search className="w-4 h-4" />
           </button>
+
+          {searchOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-black/25"
+                onClick={() => setSearchOpen(false)}
+              />
+              <div
+                role="dialog"
+                aria-label="Busca rápida de projetos"
+                className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-12 z-50 sm:w-[420px] rounded-2xl border border-[#354366] bg-[#0c1425] p-3.5 shadow-[0_24px_60px_rgba(0,0,0,0.8)]"
+              >
+                <div className="flex items-center gap-2 rounded-xl border border-[#2c3b5e] bg-[#080d19] px-3 py-2 focus-within:border-[#7c5cff]">
+                  <Search className="w-4 h-4 text-[#a5b4fc] shrink-0" />
+                  <input
+                    ref={quickSearchInputRef}
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      onTabChange?.("all");
+                      onSearchChange?.(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setSearchOpen(false);
+                      if (e.key === "Enter") {
+                        setSearchOpen(false);
+                        onFocusSearch?.();
+                      }
+                    }}
+                    placeholder="Buscar projeto por nome, stack, conta Vercel..."
+                    className="w-full bg-transparent text-xs text-white placeholder-[#7f8ea8] focus:outline-none"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => onSearchChange?.("")}
+                      className="text-[#8b9bb8] hover:text-white p-1 cursor-pointer"
+                      title="Limpar busca"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="mt-2.5 max-h-64 overflow-y-auto space-y-1.5">
+                  {matchingProjects.length === 0 ? (
+                    <p className="text-xs text-[#9baac5] py-4 text-center">
+                      Nenhum projeto encontrado para &ldquo;{searchQuery}&rdquo;.
+                    </p>
+                  ) : (
+                    matchingProjects.map((p) => {
+                      const isOnline = p.state === "online" || Boolean(p.deploy_url);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setSearchOpen(false);
+                            if (onSelectProject) {
+                              onSelectProject(p);
+                            } else {
+                              onSearchChange?.(p.name);
+                              onFocusSearch?.();
+                            }
+                          }}
+                          className="w-full text-left rounded-xl border border-[#1f2c47] bg-[#111a2e] hover:border-[#7c5cff] hover:bg-[#16223b] p-2.5 flex items-center justify-between gap-2 transition cursor-pointer"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-white truncate">
+                              {p.name}
+                            </div>
+                            <div className="text-[11px] text-[#9baac5] truncate">
+                              {p.source} • {p.tech || "TypeScript"}
+                            </div>
+                          </div>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                              isOnline
+                                ? "bg-[#0d2e28] text-[#3ddba0] border border-[#2dd4a0]/45"
+                                : "bg-rose-950/60 text-rose-300 border border-rose-500/40"
+                            }`}
+                          >
+                            {isOnline ? "● Online" : "● Em dev"}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div className="mt-2.5 pt-2 border-t border-[#1e2942] flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-[#8b9bb8]">
+                    {matchingProjects.length} resultado(s) rápido(s)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchOpen(false);
+                      onFocusSearch?.();
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#a5b4fc] hover:text-white cursor-pointer"
+                  >
+                    Ir para barra de filtros <ExternalLink className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
           <AlertsBell signedIn={Boolean(signedUser)} onOpenTelemetry={() => onTabChange?.("telemetry")} />
 

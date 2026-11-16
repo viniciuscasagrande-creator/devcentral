@@ -100,7 +100,14 @@ export function ProjectFilters({
       <div id="devcentral-filter-options" className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))] gap-2.5 items-center ${mobileFilterOpen ? "" : "[&>div:not(:first-child)]:hidden lg:[&>div:not(:first-child)]:block"}`}>
         {/* Search */}
         <div className="relative">
-          <Search className="w-4 h-4 text-[#7f8ea8] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <button
+            type="button"
+            onClick={() => searchInputRef.current?.focus()}
+            aria-label="Focar campo de pesquisa"
+            className="w-7 h-7 rounded-lg text-[#7f8ea8] hover:text-white absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center cursor-pointer"
+          >
+            <Search className="w-4 h-4" />
+          </button>
           <input
             ref={searchInputRef}
             id="project-search-input"

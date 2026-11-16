@@ -603,10 +603,22 @@ export default function DevCentralDashboard() {
           signedUser={signedUser}
           onSignInClick={handleSignIn}
           onSignOutClick={() => signOutFirebase()}
-          onFocusSearch={() =>
-            document.getElementById("project-search-input")?.focus()
-          }
+          onFocusSearch={() => {
+            setActiveTab("all");
+            setTimeout(() => {
+              const el = document.getElementById("project-search-input") as HTMLInputElement | null;
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                el.focus();
+                el.select();
+              }
+            }, 60);
+          }}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          projects={visibleProjects}
+          onSelectProject={setSelectedProject}
         />
 
         {banner && (

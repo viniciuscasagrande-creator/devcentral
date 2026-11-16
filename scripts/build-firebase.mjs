@@ -982,7 +982,22 @@ a{color:inherit;text-decoration:none}
         <div class="eyebrow">WORKSPACE PESSOAL • MULTI-CONTAS • NEON DB • FIREBASE AUTH</div>
       </div>
       <div class="top-actions" style="position:relative">
-        <button class="circle-btn" onclick="document.getElementById('search').focus()" title="Pesquisar (Ctrl + K)">🔍</button>
+        <div style="position:relative">
+          <button type="button" class="circle-btn" id="top-search-btn" onclick="window.__toggleQuickSearch()" aria-label="Abrir busca rápida de projetos" title="Pesquisar projetos (Ctrl + K)">🔍</button>
+          <div id="quick-search-backdrop" onclick="window.__closeQuickSearch()" style="display:none;position:fixed;inset:0;z-index:90;background:rgba(0,0,0,0.28)"></div>
+          <section id="quick-search-panel" role="dialog" aria-label="Busca rápida de projetos" style="display:none;position:fixed;left:12px;right:12px;top:64px;z-index:96;max-height:76dvh;overflow-y:auto;border-radius:16px;border:1px solid #354366;background:#0c1425;padding:12px;box-shadow:0 24px 60px rgba(0,0,0,0.8);max-width:420px;margin-left:auto">
+            <div style="display:flex;align-items:center;gap:8px;border-radius:11px;border:1px solid #2c3b5e;background:#080d19;padding:8px 11px">
+              <span style="color:#a5b4fc;font-size:14px">🔍</span>
+              <input id="quick-search-input" type="search" placeholder="Buscar projeto por nome, stack, conta Vercel..." style="width:100%;background:transparent;border:0;color:#fff;font-size:12.5px;outline:none" />
+              <button type="button" onclick="window.__clearQuickSearch()" title="Limpar busca" style="background:transparent;border:0;color:#8b9bb8;font-size:13px;cursor:pointer;padding:2px 4px">✕</button>
+            </div>
+            <div id="quick-search-list" style="display:grid;gap:6px;margin-top:10px;max-height:260px;overflow-y:auto"></div>
+            <div style="margin-top:10px;padding-top:8px;border-top:1px solid #1e2942;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span id="quick-search-count" style="font-size:11px;color:#8b9bb8">0 resultado(s)</span>
+              <button type="button" onclick="window.__focusMainSearch()" style="background:transparent;border:0;color:#a5b4fc;font-size:11.5px;font-weight:700;cursor:pointer">Ir para barra de filtros ↗</button>
+            </div>
+          </section>
+        </div>
         <div style="position:relative">
           <button class="circle-btn" id="alerts-bell-btn" onclick="window.__toggleAlertsBell()" aria-label="Alertas operacionais" aria-haspopup="dialog" title="Central de Alertas Operacionais">
             🔔<span id="alerts-unread-badge" style="position:absolute;top:-4px;right:-4px;min-width:19px;height:19px;padding:0 4px;border-radius:99px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;display:${initialUnreadAlerts > 0 ? "grid" : "none"};place-items:center;border:2px solid #101729">${initialUnreadAlerts > 99 ? "99+" : initialUnreadAlerts}</span>
@@ -1121,7 +1136,7 @@ a{color:inherit;text-decoration:none}
       <div class="filter-grid" id="projects-anchor">
         <div class="search-row-mobile">
           <div class="search-wrap">
-            <span class="search-icon">🔍</span>
+            <button type="button" class="search-icon" onclick="window.__focusMainSearch()" aria-label="Focar pesquisa" style="pointer-events:auto;background:transparent;border:0;padding:4px;cursor:pointer">🔍</button>
             <input class="search" type="search" id="search" placeholder="Pesquisar nome, linguagem, conta Vercel ou descrição...">
             <kbd class="kbd-ctrl">Ctrl + K</kbd>
           </div>
@@ -1328,11 +1343,100 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 window.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
     e.preventDefault();
-    $("search")?.focus();
+    window.__toggleQuickSearch?.();
   }
   if (e.key === "Escape") {
     window.__closeProjectModal();
     window.__closeAlertsBell?.();
+    window.__closeQuickSearch?.();
+  }
+});
+
+let quickSearchOpen = false;
+
+function renderQuickSearch() {
+  const listEl = $("quick-search-list");
+  const countEl = $("quick-search-count");
+  if (!listEl) return;
+  const q = ($("quick-search-input")?.value || "").toLowerCase().trim();
+  const matched = (q
+    ? projects.filter(p => [p.name, p.description, p.tech, p.source, ...(p.vercel_accounts || []), ...(p.tags || [])].join(" ").toLowerCase().includes(q))
+    : projects
+  ).slice(0, 8);
+  if (countEl) countEl.textContent = matched.length + " resultado(s) rápido(s)";
+  if (!matched.length) {
+    listEl.innerHTML = '<p style="margin:0;padding:18px 8px;text-align:center;font-size:12px;color:#9baac5">Nenhum projeto encontrado.</p>';
+    return;
+  }
+  listEl.innerHTML = matched.map(p => {
+    const isOnline = p.state === "online" || Boolean(p.deploy_url);
+    return \`<button type="button" onclick="window.__closeQuickSearch();window.__openProjectModal('\${esc(p.id)}')" style="width:100%;text-align:left;border-radius:11px;border:1px solid #1f2c47;background:#111a2e;padding:9px 11px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer">
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${esc(p.name)}</div>
+        <div style="font-size:11px;color:#9baac5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${esc(p.source)} • \${esc(p.tech || "TypeScript")}</div>
+      </div>
+      <span class="status \${isOnline ? "" : "off"}" style="font-size:10px;padding:2px 8px">● \${isOnline ? "Online" : "Em dev"}</span>
+    </button>\`;
+  }).join("");
+}
+
+window.__toggleQuickSearch = () => {
+  window.__closeAlertsBell?.();
+  quickSearchOpen = !quickSearchOpen;
+  if ($("quick-search-panel")) $("quick-search-panel").style.display = quickSearchOpen ? "block" : "none";
+  if ($("quick-search-backdrop")) $("quick-search-backdrop").style.display = quickSearchOpen ? "block" : "none";
+  if (quickSearchOpen) {
+    if ($("quick-search-input") && $("search")) {
+      $("quick-search-input").value = $("search").value;
+    }
+    renderQuickSearch();
+    setTimeout(() => $("quick-search-input")?.focus(), 20);
+  }
+};
+
+window.__closeQuickSearch = () => {
+  quickSearchOpen = false;
+  if ($("quick-search-panel")) $("quick-search-panel").style.display = "none";
+  if ($("quick-search-backdrop")) $("quick-search-backdrop").style.display = "none";
+};
+
+window.__clearQuickSearch = () => {
+  if ($("quick-search-input")) $("quick-search-input").value = "";
+  if ($("search")) $("search").value = "";
+  renderProjects();
+  renderQuickSearch();
+  $("quick-search-input")?.focus();
+};
+
+window.__focusMainSearch = () => {
+  window.__closeQuickSearch();
+  if (activeTab === "telemetry" || activeTab === "activity") {
+    activeTab = "all";
+    render();
+  }
+  const el = $("search");
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => { el.focus(); el.select?.(); }, 120);
+  }
+};
+
+$("quick-search-input")?.addEventListener("input", (e) => {
+  const val = e.target.value;
+  if ($("search")) $("search").value = val;
+  if (activeTab === "telemetry" || activeTab === "activity") {
+    activeTab = "all";
+    render();
+  } else {
+    renderProjects();
+  }
+  renderQuickSearch();
+});
+
+$("quick-search-input")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    window.__focusMainSearch();
   }
 });
 
