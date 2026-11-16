@@ -246,6 +246,9 @@ export function AppSidebar({
           </div>
 
           <nav className="space-y-1 text-xs">
+            <a data-devcentral-v41="true" href="/central-41" className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#c4b5fd] hover:text-white hover:bg-[#1b2440] transition">
+              <span aria-hidden="true">✦</span> Copiloto DevCentral 4.1
+            </a>
             {/* DEVCENTRAL_V4_NAV: link independente para preservar o menu 3.0 */}
             <a href="/central-4" className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold border border-[#5b4bd7]/50 bg-[#3d3188]/20 text-[#c9bfff] hover:bg-[#3d3188]/40 transition" >
               <span aria-hidden="true">✦</span> Central Inteligente 4.0
