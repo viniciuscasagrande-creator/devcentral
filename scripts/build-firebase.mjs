@@ -598,7 +598,7 @@ fs.mkdirSync("firebase-dist/telemetria", { recursive: true });
 if (fs.existsSync("firebase-dist/projects.json")) {
   fs.unlinkSync("firebase-dist/projects.json");
 }
-for (const asset of ["manifest.json", "icon.svg", "sw.js"]) {
+for (const asset of ["manifest.json", "icon.svg", "sw.js", "devcentral-192.png", "devcentral-512.png"]) {
   const srcPath = path.resolve(process.cwd(), "public", asset);
   if (fs.existsSync(srcPath)) {
     fs.copyFileSync(srcPath, path.resolve(process.cwd(), "firebase-dist", asset));
@@ -933,6 +933,7 @@ a{color:inherit;text-decoration:none}
       <div class="nav-sep">
         <div class="sec-title"><span class="sec-dot"></span>NAVEGAÇÃO</div>
         <nav class="nav">
+          <a href="/central-4" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9bfff;border-radius:12px;background:rgba(61,49,136,0.28);border:1px solid rgba(91,75,215,0.5);font-weight:700;font-size:12px;margin-bottom:2px"><span>✦ &nbsp; Central Inteligente 4.0</span><span class="pill-novo">v4.0</span></a>
           <a href="/operacoes" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#a5f3fc;border-radius:12px;background:rgba(18,52,68,0.45);border:1px solid rgba(56,189,248,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>⚙ &nbsp; Operações inteligentes</span><span style="font-size:10px;color:#67e8f9;font-weight:800">4.2–4.5</span></a>
           <a href="/assistente" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9befd;border-radius:12px;background:rgba(33,27,72,0.5);border:1px solid rgba(124,92,255,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>✦ &nbsp; Assistente de Manutenção</span><span class="pill-novo">IA</span></a>
           <a href="/relatorios" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9befd;border-radius:12px;background:rgba(13,46,40,0.35);border:1px solid rgba(45,212,160,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>📊 &nbsp; Relatórios de Saúde</span><span style="font-size:10px;color:#3ddba0;font-weight:800">Neon</span></a>
@@ -3361,6 +3362,412 @@ renderOperations();
 fs.mkdirSync("firebase-dist/operacoes", { recursive: true });
 fs.writeFileSync("firebase-dist/operacoes/index.html", buildOperationsHtml(), "utf-8");
 
+function buildCentral4Html() {
+  const activeAlerts = initialAlerts.filter((a) => a.state === "active");
+  const openTasksList = initialTasks.filter((t) => t.status !== "done");
+  const correlations = initialRecs
+    .filter((r) => r.status !== "resolved")
+    .map((r) => {
+      const matches = activeAlerts.filter(
+        (a) => a.projectId === r.projectId && (a.title === r.title || a.id.includes(r.id))
+      );
+      const occurrences = matches.length ? Math.max(...matches.map((a) => a.occurrences || 1)) : 0;
+      const openTasks = openTasksList.filter(
+        (t) => t.projectId === r.projectId && (t.recommendationId === r.id || t.title === r.title)
+      ).length;
+      return {
+        projectName: r.projectName || "Sistema",
+        title: r.title,
+        severity: r.severity,
+        occurrences,
+        openTasks,
+        recommendation:
+          occurrences >= 3
+            ? "Falha recorrente: comparar alterações e deploys recentes antes de nova tentativa."
+            : openTasks
+            ? "Já existe plano em aberto: conferir checklist e resultados antes de duplicar tarefas."
+            : r.action,
+      };
+    })
+    .filter((c) => c.occurrences >= 2 || c.openTasks > 0)
+    .sort((a, b) => b.occurrences - a.occurrences || b.openTasks - a.openTasks)
+    .slice(0, 8);
+
+  const overviewPayload = {
+    projects: safeRows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      source: p.source,
+      state: p.state,
+      repoUrl: p.repo_url || "",
+      defaultBranch: "main",
+      lastDeployStatus: p.last_deploy_status || "",
+      deployUrl: p.deploy_url || "",
+      lastCommitAt: p.last_commit_at || "",
+    })),
+    health: {
+      projects: safeRows.length,
+      deployFailures: deployFailureCount,
+      activeAlerts: activeAlertCount,
+      criticalAlerts: criticalAlertCount,
+      pendingTasks: pendingTaskCount,
+      lastSyncAt: safeLogs[0]?.synced_at || null,
+    },
+    history: initialHealthHistory.slice(-30),
+    correlations,
+    generatedAt: new Date().toISOString(),
+    source: "Dados registrados no Neon; não representam monitoramento em tempo real contínuo.",
+  };
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevCentral 4.0 — Central Inteligente de Desenvolvimento</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070a14;color:#f1f5f9;font-family:Inter,system-ui,-apple-system,sans-serif;padding:20px 12px;scrollbar-gutter:stable}
+@media(min-width:640px){body{padding:28px 32px}}
+.wrap{max-width:1280px;margin:0 auto;display:grid;gap:20px}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.back{font-size:14px;display:inline-flex;align-items:center;gap:8px;color:#a7b8d8;text-decoration:none;min-height:44px}
+.back:hover{color:#fff}
+.navlink{padding:8px 12px;border-radius:10px;border:1px solid #354463;color:#e2e8f0;text-decoration:none;font-size:12px}
+.hero{border-radius:24px;background:linear-gradient(135deg,#29205e,#141a36,#082a38);border:1px solid rgba(103,89,167,0.6);padding:24px;box-shadow:0 0 35px rgba(103,72,205,.13)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid #303d5d;background:#121b30;color:#b5c5e2;font-size:14px;font-weight:600;cursor:pointer}
+.tab.active{background:#5643c8;border-color:#9382ff;color:#fff}
+.box{border-radius:16px;border:1px solid #303b5a;background:#11182b;padding:18px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:1024px){.kpis{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.inp{display:block;width:100%;min-height:44px;border-radius:10px;border:1px solid #455578;background:#0a1224;padding:10px 12px;color:#fff;font-size:14px;margin-top:8px}
+.btn{min-height:44px;padding:0 20px;border-radius:12px;background:#6650da;border:0;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sec{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid #526484;background:transparent;color:#fff;font-size:14px;display:inline-flex;align-items:center;text-decoration:none}
+.item{border-radius:12px;border:1px solid #303d5a;background:#0a1427;padding:12px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top">
+    <a href="/" class="back">← Painel principal</a>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <a href="/assistente" class="navlink">Assistente 3.0</a>
+      <a href="/operacoes" class="navlink">Aprovações e PRs</a>
+      <a href="/relatorios" class="navlink">Relatórios</a>
+    </div>
+  </div>
+  <header class="hero">
+    <div style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#b4b2ff;font-weight:700">DevCentral 4.0 • Inteligência operacional</div>
+    <h1 style="font-size:clamp(24px,4vw,36px);font-weight:800;margin:8px 0 0">Central Inteligente de Desenvolvimento</h1>
+    <p style="margin:12px 0 0;max-width:760px;font-size:14px;color:#b8c5e3">Projetos, métricas, orientações e pull requests em um só lugar. Consultas somente leitura, com ações controladas na central de operações.</p>
+    <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;font-size:12px">
+      <span style="border-radius:99px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;padding:4px 12px">Somente leitura</span>
+      <span style="border-radius:99px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.4);color:#ddd6fe;padding:4px 12px">Firebase + Neon + GitHub</span>
+    </div>
+  </header>
+  <nav aria-label="Módulos do DevCentral 4.0" class="tabs" id="v4-tabs">
+    <button type="button" class="tab active" data-tab="health">Saúde</button>
+    <button type="button" class="tab" data-tab="copilot">Copiloto</button>
+    <button type="button" class="tab" data-tab="code">Código</button>
+    <button type="button" class="tab" data-tab="prs">Pull requests</button>
+    <button type="button" class="tab" data-tab="mobile">Aplicativo</button>
+  </nav>
+  <div id="v4-error" role="alert" style="display:none;border:1px solid rgba(244,63,94,.5);background:rgba(76,5,25,.3);color:#fecdd3;border-radius:12px;padding:14px;font-size:14px"></div>
+  <section class="box" id="v4-proj-bar" style="display:none;gap:12px;align-items:end;justify-content:space-between;flex-wrap:wrap">
+    <label style="font-size:14px;font-weight:600;flex:1;min-width:240px">Projeto
+      <select id="v4-proj" aria-label="Selecionar projeto" class="inp">
+        ${overviewPayload.projects.map((p) => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.source)})</option>`).join("")}
+      </select>
+    </label>
+    <span id="v4-proj-state" style="font-size:12px;color:#98a8c7"></span>
+  </section>
+  <div id="v4-content"></div>
+  <footer style="font-size:12px;color:#8999b6;border-top:1px solid #28324b;padding-top:16px">⌘ DevCentral 4.0 · ações de PR, merge, código e deploy somente após revisão explícita nos fluxos já homologados.</footer>
+</main>
+<script>
+const OVERVIEW = ${JSON.stringify(overviewPayload).replace(/</g, "\\u003c")};
+const ALERTS = ${JSON.stringify(activeAlerts).replace(/</g, "\\u003c")};
+const TASKS = ${JSON.stringify(openTasksList).replace(/</g, "\\u003c")};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let curTab = "health";
+let selected = OVERVIEW.projects[0]?.id || "";
+let question = "Quais os problemas prioritários deste projeto?";
+let copilotAns = null;
+let codeRes = null;
+let prRes = null;
+let deferredPrompt = null;
+
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (curTab === "mobile") render();
+});
+
+function parseGithubSlug(url) {
+  const m = String(url || "").match(/github\\.com\\/([a-zA-Z0-9_.-]+)\\/([a-zA-Z0-9_.-]+)/);
+  return m ? m[1] + "/" + m[2].replace(/\\.git$/, "") : null;
+}
+
+function render() {
+  const proj = OVERVIEW.projects.find(p => p.id === selected);
+  const bar = document.getElementById("v4-proj-bar");
+  bar.style.display = (curTab !== "health" && curTab !== "mobile") ? "flex" : "none";
+  document.getElementById("v4-proj-state").textContent = proj ? proj.state : "";
+  const root = document.getElementById("v4-content");
+
+  if (curTab === "health") {
+    const h = OVERVIEW.health;
+    const maxA = Math.max(1, ...(OVERVIEW.history || []).map(x => x.activeAlerts));
+    root.innerHTML = \`
+      <div style="display:grid;gap:16px">
+        <div class="kpis">
+          \${[["Projetos",h.projects],["Falhas de deploy",h.deployFailures],["Alertas ativos",h.activeAlerts],["Alertas críticos",h.criticalAlerts],["Tarefas pendentes",h.pendingTasks]].map(([l,v]) => \`
+            <article class="box"><p style="margin:0;font-size:12px;color:#a4b4d1">\${esc(l)}</p><p style="margin:8px 0 0;font-size:30px;font-weight:800">\${v}</p></article>
+          \`).join("")}
+        </div>
+        <section class="box">
+          <h3 style="margin:0;font-size:16px">Histórico de alertas</h3>
+          <p style="margin:4px 0 0;font-size:12px;color:#9eacc6">Apenas datas com coleta registrada; não representa disponibilidade contínua.</p>
+          <div style="margin-top:16px;display:flex;gap:6px;align-items:flex-end;height:160px;overflow-x:auto">
+            \${OVERVIEW.history.map(d => \`
+              <div style="height:100%;min-width:28px;max-width:56px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px" title="\${esc(d.day)}: \${d.activeAlerts} alertas">
+                <span style="font-size:10px">\${d.activeAlerts}</span>
+                <div style="width:100%;background:linear-gradient(to top,#6d28d9,#22d3ee);border-radius:4px 4px 0 0;height:\${Math.max(4, Math.round((d.activeAlerts/maxA)*77))}%"></div>
+                <span style="font-size:10px;color:#9caccc">\${esc(d.day.slice(8))}</span>
+              </div>
+            \`).join("")}
+          </div>
+        </section>
+        <section class="box">
+          <h3 style="margin:0;font-size:16px">Problemas correlacionados</h3>
+          <div style="margin-top:12px;display:grid;gap:8px">
+            \${OVERVIEW.correlations.length ? OVERVIEW.correlations.map(x => \`
+              <div class="item">
+                <div style="display:flex;justify-content:space-between;gap:12px">
+                  <strong style="font-size:14px">\${esc(x.projectName)} · \${esc(x.title)}</strong>
+                  <span style="font-size:12px;color:#fde68a">\${x.occurrences} ocorrências</span>
+                </div>
+                <p style="margin:6px 0 0;font-size:13px;color:#a9bbd8">\${esc(x.recommendation)}</p>
+              </div>
+            \`).join("") : '<p style="margin:0;font-size:14px;color:#a1b1ce">Sem correlações prioritárias nos registros atuais.</p>'}
+          </div>
+        </section>
+        <p style="margin:0;font-size:12px;color:#869abc">\${esc(OVERVIEW.source)} Última sincronização registrada: \${h.lastSyncAt ? new Date(h.lastSyncAt).toLocaleString("pt-BR") : "sem registro"}.</p>
+      </div>
+    \`;
+  } else if (curTab === "copilot") {
+    root.innerHTML = \`
+      <section class="box" style="display:grid;gap:14px">
+        <h2 style="margin:0;font-size:18px">🤖 Copiloto contextual</h2>
+        <p style="margin:0;font-size:12px;color:#abb9d3">Respostas baseadas em fatos salvos no Neon, sem IA generativa e sem executar comandos.</p>
+        <label style="font-size:12px;color:#b8c9e3">Sua pergunta
+          <textarea id="cop-q" maxlength="500" rows="3" class="inp">\${esc(question)}</textarea>
+        </label>
+        <div><button type="button" class="btn" id="btn-cop">Consultar contexto</button></div>
+        \${copilotAns ? \`
+          <article class="item" style="display:grid;gap:10px">
+            <h3 style="margin:0;font-size:15px">Evidências — \${esc(copilotAns.projectName)}</h3>
+            <ul style="margin:0;padding-left:20px;font-size:14px;color:#cbd7ed">\${copilotAns.evidence.map(e => \`<li>\${esc(e)}</li>\`).join("")}</ul>
+            <p style="margin:0;font-size:14px;color:#9de3ce;font-weight:600">\${esc(copilotAns.recommendation)}</p>
+            <p style="margin:0;font-size:12px;color:#96a7c6">\${esc(copilotAns.limitations)}</p>
+          </article>
+        \` : ""}
+      </section>
+    \`;
+    document.getElementById("btn-cop").onclick = () => {
+      question = document.getElementById("cop-q").value.trim();
+      if (!proj || question.length < 4) return;
+      const q = question.toLowerCase();
+      const pAlerts = ALERTS.filter(a => a.projectId === proj.id);
+      const pTasks = TASKS.filter(t => t.projectId === proj.id);
+      const ev = [];
+      if (/deploy|build|publica|produção|falha|erro/.test(q)) {
+        ev.push("Último status de deploy armazenado: " + (proj.lastDeployStatus || "não informado") + ".");
+        if (proj.deployUrl) ev.push("O projeto possui URL de publicação cadastrada; teste HTTP ao vivo na Telemetria.");
+        pAlerts.slice(0, 3).forEach(a => ev.push("Alerta " + a.severity + ": " + a.title + " (" + a.occurrences + " ocorrência(s))."));
+      } else if (/tarefa|plano|pendência|prazo|manutenção/.test(q)) {
+        ev.push(pTasks.length + " tarefa(s) pendente(s) registradas neste projeto.");
+        pTasks.slice(0, 4).forEach(t => ev.push("Tarefa [" + t.priority + "/" + t.status + "]: " + t.title + "."));
+      } else if (/commit|repo|git|pull|pr|branch|código/.test(q)) {
+        ev.push("Origem: " + proj.source + "; branch principal: " + (proj.defaultBranch || "main") + ".");
+        ev.push("Último commit registrado: " + (proj.lastCommitAt || "não informado") + ".");
+        ev.push("Consulte as abas Código e Pull Requests para dados atuais do GitHub.");
+      } else {
+        ev.push("Projeto " + proj.name + ": estado cadastrado " + proj.state + "; origem " + proj.source + ".");
+        ev.push(pAlerts.length + " alerta(s) ativo(s) e " + pTasks.length + " tarefa(s) pendente(s).");
+        ev.push("Visão geral do workspace: " + OVERVIEW.health.activeAlerts + " alertas ativos no total.");
+      }
+      copilotAns = {
+        projectName: proj.name,
+        evidence: ev,
+        recommendation: pAlerts.length
+          ? "Priorize os alertas críticos, revise as evidências na Telemetria e valide após corrigir."
+          : pTasks.length
+          ? "Revise os planos de ação pendentes e confirme os resultados antes de encerrar."
+          : "Não há evidência suficiente para propor uma correção específica. Execute a inspeção na Telemetria.",
+        limitations: "Resposta determinística baseada nos dados registrados; não executa ações, não verifica logs em tempo real e não usa IA generativa."
+      };
+      render();
+    };
+  } else if (curTab === "code") {
+    root.innerHTML = \`
+      <section class="box" style="display:grid;gap:14px">
+        <h2 style="margin:0;font-size:18px">&lt;/&gt; Análise de qualidade do projeto</h2>
+        <p style="margin:0;font-size:12px;color:#a9b8d4">Consulta GitHub e package.json. Não realiza build, não lê código-fonte inteiro e não afirma detectar vulnerabilidades reais.</p>
+        <div><button type="button" class="btn" id="btn-code">🔍 Inspecionar projeto</button></div>
+        \${codeRes ? \`
+          <div style="display:grid;gap:8px">
+            <p style="margin:0;font-size:12px;color:#a9bad5">\${esc(codeRes.summary)}</p>
+            \${codeRes.checks.map(c => \`
+              <article class="item" style="display:flex;gap:10px;align-items:flex-start">
+                <span>\${c.status === "attention" ? "⚠️" : "✅"}</span>
+                <div><strong style="font-size:14px">\${esc(c.title)}</strong><p style="margin:4px 0 0;font-size:12px;color:#a8b8d5">\${esc(c.detail)}</p></div>
+              </article>
+            \`).join("")}
+          </div>
+        \` : ""}
+      </section>
+    \`;
+    document.getElementById("btn-code").onclick = async () => {
+      if (!proj) return;
+      const slug = parseGithubSlug(proj.repoUrl);
+      if (!slug) {
+        codeRes = { summary: "Análise de metadados disponível somente para repositórios GitHub vinculados.", checks: [] };
+        render();
+        return;
+      }
+      const checks = [];
+      try {
+        const r = await fetch("https://api.github.com/repos/" + slug);
+        if (r.ok) {
+          const repo = await r.json();
+          checks.push({ title: "Repositório", status: "ok", detail: "GitHub: " + slug + " — visibilidade " + (repo.private ? "privada" : "pública") + "." });
+          if (repo.open_issues_count > 0) checks.push({ title: "Issues/PRs abertos", status: "info", detail: repo.open_issues_count + " itens abertos registrados pelo GitHub." });
+        } else {
+          checks.push({ title: "Metadados", status: "attention", detail: "Consulta pública indisponível ou repositório privado." });
+        }
+        const pf = await fetch("https://api.github.com/repos/" + slug + "/contents/package.json");
+        if (pf.ok) {
+          const file = await pf.json();
+          const pkg = JSON.parse(atob(String(file.content || "").replace(/\\s/g, "")));
+          [["Build","build"],["Testes","test"],["Lint","lint"]].forEach(([lbl,k]) => {
+            const ex = Boolean(pkg.scripts && typeof pkg.scripts[k] === "string");
+            checks.push({ title: "Script " + lbl.toLowerCase(), status: ex ? "ok" : "attention", detail: ex ? "Script '" + k + "' encontrado no package.json." : "Script '" + k + "' não declarado no package.json." });
+          });
+          const deps = Object.keys({ ...(pkg.dependencies||{}), ...(pkg.devDependencies||{}) }).length;
+          checks.push({ title: "Dependências", status: "info", detail: deps + " dependências declaradas. Não foram examinadas vulnerabilidades ou versões instaladas." });
+        } else {
+          checks.push({ title: "package.json", status: "info", detail: "package.json indisponível neste repositório ou branch; análise de scripts omitida." });
+        }
+      } catch {
+        checks.push({ title: "Metadados", status: "attention", detail: "Falha ao consultar api.github.com." });
+      }
+      codeRes = {
+        summary: "Inspeção heurística e somente leitura de metadados e package.json. Não é um teste de build, varredura de vulnerabilidades ou auditoria integral do código.",
+        checks
+      };
+      render();
+    };
+  } else if (curTab === "prs") {
+    root.innerHTML = \`
+      <section class="box" style="display:grid;gap:14px">
+        <h2 style="margin:0;font-size:18px">🔀 Revisão e acompanhamento de PRs</h2>
+        <p style="margin:0;font-size:12px;color:#aebcd6">Consulta dos 30 PRs mais recentes no GitHub. Ações de aprovação e criação controlada continuam na Central de Operações.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn" id="btn-prs">Consultar pull requests</button>
+          <a href="/operacoes" class="btn-sec">Ir para aprovações</a>
+        </div>
+        \${prRes ? \`
+          <div style="display:grid;gap:8px">
+            <p style="margin:0;font-size:12px;color:#aebbd4">\${esc(prRes.summary)}</p>
+            \${prRes.prs.length ? prRes.prs.map(pr => \`
+              <article class="item" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+                <div>
+                  <a href="\${esc(pr.url)}" target="_blank" rel="noopener noreferrer" style="font-size:14px;font-weight:700;color:#b6a9ff">#\${pr.number} \${esc(pr.title)}</a>
+                  <p style="margin:4px 0 0;font-size:12px;color:#aab9d6">\${esc(pr.branch)} · Atualizado \${pr.updatedAt ? new Date(pr.updatedAt).toLocaleString("pt-BR") : "sem data"}</p>
+                </div>
+                <span style="font-size:12px;color:#b2e3d6">\${pr.merged ? "Mesclado" : pr.draft ? "Draft" : pr.state === "open" ? "Aberto" : "Fechado"}</span>
+              </article>
+            \`).join("") : '<p style="margin:0;font-size:14px;color:#a9b8d1">Nenhum PR retornado.</p>'}
+          </div>
+        \` : ""}
+      </section>
+    \`;
+    document.getElementById("btn-prs").onclick = async () => {
+      if (!proj) return;
+      const slug = parseGithubSlug(proj.repoUrl);
+      if (!slug) {
+        prRes = { summary: "Acompanhamento de PRs disponível para repositórios GitHub vinculados.", prs: [] };
+        render();
+        return;
+      }
+      try {
+        const r = await fetch("https://api.github.com/repos/" + slug + "/pulls?state=all&per_page=30&sort=updated&direction=desc");
+        const data = r.ok ? await r.json() : [];
+        prRes = {
+          summary: "Últimos 30 PRs por atualização. Consulte o GitHub para checks, revisões e permissões atuais. Aprovações e merge não são executados aqui.",
+          prs: Array.isArray(data) ? data.map(x => ({
+            number: Number(x.number), title: String(x.title || ""), url: String(x.html_url || ""),
+            state: String(x.state || ""), draft: Boolean(x.draft), merged: Boolean(x.merged_at),
+            updatedAt: String(x.updated_at || ""), branch: String(x.head?.ref || "")
+          })) : []
+        };
+      } catch {
+        prRes = { summary: "Não foi possível consultar PRs neste momento.", prs: [] };
+      }
+      render();
+    };
+  } else if (curTab === "mobile") {
+    root.innerHTML = \`
+      <section class="box" style="display:grid;gap:14px">
+        <h2 style="margin:0;font-size:18px">📱 DevCentral como aplicativo</h2>
+        <p style="margin:0;font-size:14px;color:#bccbe4">O DevCentral já possui manifesto e service worker. A versão 4.0 mantém o uso como PWA e atualiza sua identificação. O modo offline não armazena dados autenticados.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          \${deferredPrompt ? '<button type="button" class="btn" id="btn-pwa">Instalar DevCentral</button>' : ''}
+          <p style="margin:0;font-size:14px;color:#aabbd8">\${deferredPrompt ? "O navegador permite instalação direta." : "No Android: menu do navegador → Instalar app. No iPhone (Safari): Compartilhar → Adicionar à Tela de Início."}</p>
+        </div>
+        <p style="margin:0;font-size:12px;color:#8f9fbd">🛡️ Dados sensíveis e APIs autenticadas não são armazenados no cache offline.</p>
+      </section>
+    \`;
+    const b = document.getElementById("btn-pwa");
+    if (b && deferredPrompt) {
+      b.onclick = async () => {
+        await deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        render();
+      };
+    }
+  }
+}
+
+document.querySelectorAll("#v4-tabs .tab").forEach(btn => {
+  btn.onclick = () => {
+    curTab = btn.getAttribute("data-tab");
+    document.querySelectorAll("#v4-tabs .tab").forEach(x => x.classList.toggle("active", x === btn));
+    render();
+  };
+});
+document.getElementById("v4-proj").onchange = e => {
+  selected = e.target.value;
+  copilotAns = null;
+  codeRes = null;
+  prRes = null;
+  render();
+};
+render();
+</script>
+</body>
+</html>`;
+}
+
+fs.mkdirSync("firebase-dist/central-4", { recursive: true });
+fs.writeFileSync("firebase-dist/central-4/index.html", buildCentral4Html(), "utf-8");
+
 console.log(
-  `OK: Novo layout DevCentral gerado em firebase-dist/index.html, firebase-dist/telemetria/index.html, firebase-dist/relatorios/index.html, firebase-dist/assistente/index.html e firebase-dist/operacoes/index.html (${safeRows.length} projetos públicos em 4 colunas + ${initialRecs.length} diagnósticos).`
+  `OK: Novo layout DevCentral 4.0 gerado em firebase-dist/index.html, firebase-dist/telemetria/index.html, firebase-dist/relatorios/index.html, firebase-dist/assistente/index.html, firebase-dist/operacoes/index.html e firebase-dist/central-4/index.html (${safeRows.length} projetos públicos em 4 colunas + ${initialRecs.length} diagnósticos).`
 );

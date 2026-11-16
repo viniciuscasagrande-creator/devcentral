@@ -25,6 +25,10 @@
         "destination": "/operacoes/index.html"
       },
       {
+        "source": "/central-4",
+        "destination": "/central-4/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
