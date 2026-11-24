@@ -112,6 +112,7 @@ function copyDirRecursive(src, dest) {
   if (!fs.existsSync(src)) return;
   fs.mkdirSync(dest, { recursive: true });
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    if (entry.name.endsWith(".apk") || entry.name.endsWith(".idsig")) continue;
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
