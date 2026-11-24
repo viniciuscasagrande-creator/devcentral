@@ -39,32 +39,30 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        try {
+            requestWindowFeature(Window.FEATURE_NO_TITLE);
+        } catch (Throwable ignored) {
+        }
+
         Window window = getWindow();
         if (window != null) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(Color.parseColor("#070A14"));
-            window.setNavigationBarColor(Color.parseColor("#080C17"));
+            try {
+                window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                window.setStatusBarColor(Color.parseColor("#070A14"));
+                window.setNavigationBarColor(Color.parseColor("#080C17"));
+            } catch (Throwable ignored) {
+            }
 
             // Support display cutout (notch/camera punch-hole) cleanly
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                WindowManager.LayoutParams lp = window.getAttributes();
-                lp.layoutInDisplayCutoutMode =
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-                                ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-                                : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-                window.setAttributes(lp);
-            }
-
-            // Ensure light status/navigation bar icons on dark #070A14 background
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = window.getInsetsController();
-                if (controller != null) {
-                    controller.setSystemBarsAppearance(
-                            0,
-                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                                    | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                    );
+                try {
+                    WindowManager.LayoutParams lp = window.getAttributes();
+                    lp.layoutInDisplayCutoutMode =
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                                    ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                                    : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                    window.setAttributes(lp);
+                } catch (Throwable ignored) {
                 }
             }
         }
@@ -77,28 +75,31 @@ public class MainActivity extends Activity {
             root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
                 @Override
                 public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-                    int left = 0;
-                    int top = 0;
-                    int right = 0;
-                    int bottom = 0;
+                    try {
+                        int left = 0;
+                        int top = 0;
+                        int right = 0;
+                        int bottom = 0;
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        Insets sysBars = insets.getInsets(
-                                WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()
-                        );
-                        Insets ime = insets.getInsets(WindowInsets.Type.ime());
-                        left = sysBars.left;
-                        top = sysBars.top;
-                        right = sysBars.right;
-                        bottom = Math.max(sysBars.bottom, ime.bottom);
-                    } else {
-                        left = insets.getSystemWindowInsetLeft();
-                        top = insets.getSystemWindowInsetTop();
-                        right = insets.getSystemWindowInsetRight();
-                        bottom = insets.getSystemWindowInsetBottom();
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            Insets sysBars = insets.getInsets(
+                                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()
+                            );
+                            Insets ime = insets.getInsets(WindowInsets.Type.ime());
+                            left = sysBars.left;
+                            top = sysBars.top;
+                            right = sysBars.right;
+                            bottom = Math.max(sysBars.bottom, ime.bottom);
+                        } else {
+                            left = insets.getSystemWindowInsetLeft();
+                            top = insets.getSystemWindowInsetTop();
+                            right = insets.getSystemWindowInsetRight();
+                            bottom = insets.getSystemWindowInsetBottom();
+                        }
+
+                        v.setPadding(left, top, right, bottom);
+                    } catch (Throwable ignored) {
                     }
-
-                    v.setPadding(left, top, right, bottom);
                     return insets;
                 }
             });
@@ -122,6 +123,21 @@ public class MainActivity extends Activity {
         root.addView(progressBar, pbParams);
         setContentView(root);
 
+        // Must be called AFTER setContentView(root) so the DecorView exists!
+        if (window != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                WindowInsetsController controller = window.getInsetsController();
+                if (controller != null) {
+                    controller.setSystemBarsAppearance(
+                            0,
+                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                                    | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                    );
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
         configureWebView();
 
         String initialUrl = resolveInitialUrl(getIntent());
@@ -139,17 +155,20 @@ public class MainActivity extends Activity {
     }
 
     private String resolveInitialUrl(Intent intent) {
-        if (intent != null && intent.getData() != null) {
-            String dataUrl = intent.getDataString();
-            if (dataUrl != null && dataUrl.startsWith("http")) {
-                return dataUrl;
+        try {
+            if (intent != null && intent.getData() != null) {
+                String dataUrl = intent.getDataString();
+                if (dataUrl != null && dataUrl.startsWith("http")) {
+                    return dataUrl;
+                }
             }
-        }
-        if (intent != null && intent.hasExtra("shortcut_path")) {
-            String path = intent.getStringExtra("shortcut_path");
-            if (path != null && !path.isEmpty()) {
-                return LIVE_URL.replaceAll("/$", "") + path;
+            if (intent != null && intent.hasExtra("shortcut_path")) {
+                String path = intent.getStringExtra("shortcut_path");
+                if (path != null && !path.isEmpty()) {
+                    return LIVE_URL.replaceAll("/$", "") + path;
+                }
             }
+        } catch (Throwable ignored) {
         }
         return LIVE_URL;
     }
@@ -182,10 +201,13 @@ public class MainActivity extends Activity {
             settings.setUserAgentString(cleanUa + " DevCentralMobile/3.0");
         }
 
-        CookieManager cookieManager = CookieManager.getInstance();
-        cookieManager.setAcceptCookie(true);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cookieManager.setAcceptThirdPartyCookies(webView, true);
+        try {
+            CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.setAcceptCookie(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                cookieManager.setAcceptThirdPartyCookies(webView, true);
+            }
+        } catch (Throwable ignored) {
         }
 
         webView.setWebChromeClient(new WebChromeClient() {
@@ -216,7 +238,10 @@ public class MainActivity extends Activity {
                 if (progressBar != null) {
                     progressBar.setVisibility(View.GONE);
                 }
-                CookieManager.getInstance().flush();
+                try {
+                    CookieManager.getInstance().flush();
+                } catch (Throwable ignored) {
+                }
             }
 
             @Override
@@ -295,6 +320,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        CookieManager.getInstance().flush();
+        try {
+            CookieManager.getInstance().flush();
+        } catch (Throwable ignored) {
+        }
     }
 }

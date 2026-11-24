@@ -287,9 +287,9 @@ execFileSync(
   { stdio: "inherit", env: envWithJava }
 );
 
-// Add classes.dex and assets/www/* to the APK package
+// Add classes.dex UNCOMPRESSED (-0) so Android 11+ / 15 / 16 ART can mmap it directly, and add assets/www/*
 const jarExe = javaBinDir ? path.join(javaBinDir, "jar.exe") : "jar";
-execFileSync(jarExe, ["uf", unalignedApk, "-C", dexDir, "classes.dex"], {
+execFileSync(jarExe, ["uf0", unalignedApk, "-C", dexDir, "classes.dex"], {
   stdio: "inherit",
 });
 addAssetFilesToZip(unalignedApk, path.join(ANDROID_MAIN, "assets"), javaBinDir);
@@ -340,6 +340,12 @@ execFileSync(
     "/c",
     apksignerBat,
     "sign",
+    "--v1-signing-enabled",
+    "true",
+    "--v2-signing-enabled",
+    "true",
+    "--v3-signing-enabled",
+    "true",
     "--ks",
     keystorePath,
     "--ks-key-alias",
