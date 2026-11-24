@@ -10,3 +10,8 @@ firebase-dist/
 *.tsbuildinfo
 next-env.d.ts
 backups/
+android/build-apk/
+android/.gradle/
+android/app/build/
+android/*.keystore
+*.idsig

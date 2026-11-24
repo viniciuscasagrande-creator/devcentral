@@ -14,13 +14,20 @@ export const metadata: Metadata = {
     "Painel centralizado multi-contas (GitHub, GitLab, Vercel 1 & 2, Neon DB e Firebase Auth) com Telemetria & Soluções.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icon-192.png",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "DevCentral",
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 

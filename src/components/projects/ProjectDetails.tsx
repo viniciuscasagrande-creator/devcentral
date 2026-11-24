@@ -385,9 +385,9 @@ export function ProjectDetails({
   const openTasksCount = tasks.filter((t) => t.status !== "done").length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-[75] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div
-        className={`w-full max-w-4xl rounded-2xl border bg-[#0c1222] text-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${
+        className={`w-full max-w-4xl rounded-t-2xl sm:rounded-2xl border bg-[#0c1222] text-white shadow-2xl overflow-hidden flex flex-col max-h-[94dvh] sm:max-h-[90vh] pb-[env(safe-area-inset-bottom,0px)] ${
           isOnline
             ? "border-[#2dd4a0]/75 shadow-[0_0_32px_rgba(45,212,160,0.2)]"
             : "border-[#ff4d6d]/75 shadow-[0_0_32px_rgba(255,77,109,0.2)]"

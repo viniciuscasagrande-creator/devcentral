@@ -261,12 +261,12 @@ export function ProjectFilters({
       {/* Painel de Filtros Mobile (Bottom Sheet) */}
       {mobileSheetOpen && (
         <div
-          className="fixed inset-0 z-50 lg:hidden bg-black/75 backdrop-blur-sm flex items-end justify-center"
+          className="fixed inset-0 z-[75] lg:hidden bg-black/75 backdrop-blur-sm flex items-end justify-center"
           onClick={(e) => {
             if (e.target === e.currentTarget) setMobileSheetOpen(false);
           }}
         >
-          <div className="w-full max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-[#2c3b5e] bg-[#0c1222] p-5 space-y-4 text-xs shadow-2xl">
+          <div className="w-full max-h-[88dvh] overflow-y-auto rounded-t-2xl border-t border-[#2c3b5e] bg-[#0c1222] p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] space-y-4 text-xs shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#1e2942] pb-3">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-[#a78bfa]" />

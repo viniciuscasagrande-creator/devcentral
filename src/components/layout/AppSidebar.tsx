@@ -262,6 +262,9 @@ export function AppSidebar({
             <a href="/relatorios" className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-[#c9befd] hover:text-white hover:bg-[#211b48] font-semibold transition">
               <span>📊 Relatórios de Saúde</span><span className="text-[10px] text-[#3ddba0]">Neon</span>
             </a>
+            <a href="/DevCentral-3.0-mobile.apk" download="DevCentral-3.0-mobile.apk" className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-[#3ddba0] hover:text-white hover:bg-[#0d2e28] border border-[#2dd4a0]/35 font-semibold transition">
+              <span>📱 Baixar App Android (.APK)</span><span className="text-[10px] text-[#3ddba0] font-bold">v3.0</span>
+            </a>
             <button
               type="button"
               onClick={() =>

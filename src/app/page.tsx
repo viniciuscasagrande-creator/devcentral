@@ -88,6 +88,26 @@ export default function DevCentralDashboard() {
   // Navigation & Filters (Compact 4-per-row grid: className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3")
   const [activeTab, setActiveTab] = useState<NavTab>("all");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const tabParam = new URLSearchParams(window.location.search).get("tab");
+    if (
+      tabParam &&
+      [
+        "all",
+        "pinned",
+        "online",
+        "deployments",
+        "telemetry",
+        "activity",
+        "hidden",
+        "integrations",
+      ].includes(tabParam)
+    ) {
+      setActiveTab(tabParam as NavTab);
+    }
+  }, []);
   useEffect(() => {
     if (!mobileMenuOpen) return;
     const previousOverflow = document.body.style.overflow;

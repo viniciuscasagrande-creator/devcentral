@@ -1,0 +1,19 @@
+{
+  "appId": "com.devcentral.mobile",
+  "appName": "DevCentral 3.0",
+  "webDir": "firebase-dist",
+  "server": {
+    "url": "https://devcentral-190fe.web.app",
+    "cleartext": true,
+    "allowNavigation": [
+      "devcentral-190fe.web.app",
+      "devcentral-190fe.firebaseapp.com",
+      "*.google.com",
+      "*.googleapis.com"
+    ]
+  },
+  "android": {
+    "backgroundColor": "#070a14",
+    "allowMixedContent": true
+  }
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DevCentral 3.0</string>
+    <string name="shortcut_online_short">Online</string>
+    <string name="shortcut_online_long">Projetos Online</string>
+    <string name="shortcut_telemetry_short">Telemetria</string>
+    <string name="shortcut_telemetry_long">Telemetria &amp; Soluções</string>
+    <string name="shortcut_assistant_short">Assistente</string>
+    <string name="shortcut_assistant_long">Assistente de Manutenção</string>
+    <string name="shortcut_reports_short">Relatórios</string>
+    <string name="shortcut_reports_long">Relatórios de Saúde</string>
+</resources>

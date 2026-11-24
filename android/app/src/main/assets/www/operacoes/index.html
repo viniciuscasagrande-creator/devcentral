@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operações Inteligentes | DevCentral 3.0</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070a14;color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;padding:24px 16px;scrollbar-gutter:stable}
+@media(min-width:640px){body{padding:32px}}
+.wrap{max-width:1152px;margin:0 auto;display:grid;gap:24px}
+.head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.back{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#b6c5df;text-decoration:none;min-height:44px}
+.back:hover{color:#fff}
+.hero{padding:24px;border-radius:18px;border:1px solid rgba(111,93,204,0.5);background:linear-gradient(90deg,#1b1941,#0d2833)}
+.panel{border-radius:16px;border:1px solid #2b3954;background:#111b2e;padding:16px;display:grid;gap:12px}
+.inp{width:100%;min-height:44px;border-radius:12px;border:1px solid #354261;background:#0a1427;padding:10px 12px;font-size:14px;color:#fff}
+.btn{min-height:44px;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:600;border:1px solid #526399;background:#242c55;color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.btn:hover{background:#303a67}
+.item{background:#091323;border:1px solid #2d405c;border-radius:12px;padding:12px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <a href="/" class="back">← Voltar ao painel</a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="/assistente" class="btn">Assistente</a>
+      <a href="/relatorios" class="btn">Relatórios</a>
+    </div>
+  </header>
+  <section class="hero">
+    <p style="margin:0;font-size:12px;color:#b2a7ff;text-transform:uppercase;letter-spacing:1.6px;font-weight:700">DevCentral 3.0 • Fases 4.2—4.5</p>
+    <h1 style="margin:8px 0 0;font-size:clamp(24px,4vw,36px);font-weight:800">Operações inteligentes</h1>
+    <p style="margin:12px 0 0;font-size:14px;color:#bbcae0">Correlação de ocorrências, trilha de auditoria, manutenção preventiva e criação controlada de pull requests draft. Nenhuma alteração de código ou deploy é automática.</p>
+  </section>
+  <div id="op-notice" style="display:none;padding:12px;border-radius:12px;border:1px solid rgba(16,185,129,0.5);color:#a7f3d0;font-size:13px"></div>
+  <section class="panel">
+    <h2 style="margin:0;font-size:18px;font-weight:700">📈 Projeto e correlação de problemas</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
+      <select id="op-proj" class="inp">
+        <option value="">Todos os projetos</option>
+        <option value="github-devcentral">DevCentral 2.1 (Cockpit de Projetos)</option><option value="github-1451721834">PLANO-DE-A-O-ERP</option><option value="github-1347744165">safesaff</option><option value="github-1455635207">devcentral</option><option value="github-1447429361">BRAVO_II</option><option value="vercel-vercel2-prj_ebuNylA1sEN3tWuxipkZJag5aiEW">bravo-ii-portal-produtor</option><option value="vercel-vercel2-prj_1kJ2nieprbL3Wc2tTX3iSwMzKx5l">bravo-ii-api</option><option value="vercel-vercel2-prj_LyuQ9YSLjL8ZALPA1c7TqaMfe9h2">delta_1</option><option value="github-1395298801">financeiro_V1</option><option value="gitlab-87358255">KEEPER</option><option value="github-1402323851">ERPV1-MIRROR</option><option value="gitlab-87077183">financeiro_V1</option><option value="github-1387567125">rua-da-musica-agencia</option><option value="github-1352676607">creative-dashboard</option><option value="gitlab-86723910">EDDIE</option><option value="gitlab-86687362">MASTER</option><option value="gitlab-86687113">masternewpdt</option><option value="github-1375076119">newpdtv1</option><option value="github-1303158657">modelodevendas</option><option value="github-1356385605">Modulos-de-vendas_backup</option><option value="vercel-vercel2-prj_25bNX8H9vSy5fJ2hD1FgNhyvbc73">modulos-de-vendas</option><option value="vercel-vercel2-prj_MmbagEGLsDKWlZ6qLowx61gL5EjR">diskhub-premium-frontend</option><option value="gitlab-85973285">safesaff</option><option value="github-1347583522">safsafe</option><option value="github-1307719932">Curitiba-360</option><option value="github-1309905827">sitecwb360</option><option value="vercel-vercel1-prj_XQfXd8LqumMWcyOqi1k28xtZOqwo">curitiba360-app</option><option value="gitlab-84778736">Curitiba-360</option><option value="vercel-vercel1-prj_wpy0D7A3WpDywBaabUFjS2YxYn6x">curitiba360-enterprise</option><option value="vercel-vercel1-prj_mbBTzIn6nj5P34l2FVjtw0ZbGW2K">curitiba-360</option><option value="vercel-vercel1-prj_rPS8JYpyGdafn1dEFLDwGOqsyn1E">curitiba360-backoffice</option><option value="vercel-vercel1-prj_JwP41ZYcLkEJu3UBPz8TTsbLpB8K">modulos-de-vendas</option>
+      </select>
+      <input id="op-query" class="inp" placeholder="Pesquisar problemas" />
+      <button type="button" id="btn-op-refresh" class="btn">↻ Atualizar</button>
+    </div>
+    <div id="op-corr-list" style="display:grid;gap:8px"></div>
+  </section>
+  <section class="panel">
+    <h2 style="margin:0;font-size:18px;font-weight:700">🕒 Manutenção preventiva</h2>
+    <p style="margin:0;font-size:14px;color:#b4c2d9">Gera até 10 relatórios por execução, no máximo uma vez por projeto por dia. A execução automática depende da configuração do Cloud Scheduler.</p>
+    <div>
+      <button type="button" id="btn-op-preventive" class="btn">Executar verificação manual</button>
+    </div>
+  </section>
+  <section class="panel">
+    <h2 style="margin:0;font-size:18px;font-weight:700">🔀 Propostas para pull request</h2>
+    <p style="margin:0;font-size:12px;color:#a5b4ce">A branch de correção precisa existir no GitHub. Esta tela não gera nem envia commits. Primeiro crie uma proposta, depois aprove-a e confirme a abertura do PR draft.</p>
+    <form id="op-pr-form" style="display:grid;gap:12px">
+      <p id="op-proj-meta" style="margin:0;font-size:12px;color:#a7b8da"></p>
+      <input id="pr-title" class="inp" placeholder="Título da proposta" maxlength="180" required />
+      <textarea id="pr-body" class="inp" rows="4" maxlength="6000" placeholder="Descreva evidências, alterações já realizadas e como testar"></textarea>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
+        <input id="pr-head" class="inp" placeholder="Branch com a correção (ex.: fix/telemetria)" required />
+        <input id="pr-base" class="inp" placeholder="Branch base" value="main" required />
+      </div>
+      <div>
+        <button type="submit" class="btn">Registrar proposta (sem criar PR)</button>
+      </div>
+    </form>
+    <h3 style="margin:8px 0 0;font-size:14px;font-weight:700">Propostas recentes</h3>
+    <div id="op-prop-list" style="display:grid;gap:8px"></div>
+  </section>
+  <section class="panel">
+    <h2 style="margin:0;font-size:18px;font-weight:700">📋 Auditoria operacional</h2>
+    <div id="op-audit-list" style="max-height:320px;overflow:auto;display:grid;gap:8px"></div>
+  </section>
+  <footer style="font-size:12px;color:#8b9bb9">🛡️ Protegido por Firebase Admin; operações persistidas no Neon.</footer>
+</main>
+<script>
+const PROJS = [{"id":"github-devcentral","name":"DevCentral 2.1 (Cockpit de Projetos)","repoUrl":"https://github.com/viniciuscasagrande-creator/devcentral","defaultBranch":"main"},{"id":"github-1451721834","name":"PLANO-DE-A-O-ERP","repoUrl":"https://github.com/viniciuscasagrande-creator/PLANO-DE-A-O-ERP","defaultBranch":"main"},{"id":"github-1347744165","name":"safesaff","repoUrl":"https://github.com/viniciuscasagrande-creator/safesaff","defaultBranch":"main"},{"id":"github-1455635207","name":"devcentral","repoUrl":"https://github.com/viniciuscasagrande-creator/devcentral","defaultBranch":"main"},{"id":"github-1447429361","name":"BRAVO_II","repoUrl":"https://github.com/viniciuscasagrande-creator/BRAVO_II","defaultBranch":"main"},{"id":"vercel-vercel2-prj_ebuNylA1sEN3tWuxipkZJag5aiEW","name":"bravo-ii-portal-produtor","repoUrl":"","defaultBranch":"main"},{"id":"vercel-vercel2-prj_1kJ2nieprbL3Wc2tTX3iSwMzKx5l","name":"bravo-ii-api","repoUrl":"","defaultBranch":"main"},{"id":"vercel-vercel2-prj_LyuQ9YSLjL8ZALPA1c7TqaMfe9h2","name":"delta_1","repoUrl":"","defaultBranch":"main"},{"id":"github-1395298801","name":"financeiro_V1","repoUrl":"https://github.com/viniciuscasagrande-creator/financeiro_V1","defaultBranch":"main"},{"id":"gitlab-87358255","name":"KEEPER","repoUrl":"https://gitlab.com/ViniciusMurray/keeper","defaultBranch":"main"},{"id":"github-1402323851","name":"ERPV1-MIRROR","repoUrl":"https://github.com/viniciuscasagrande-creator/ERPV1-MIRROR","defaultBranch":"main"},{"id":"gitlab-87077183","name":"financeiro_V1","repoUrl":"https://gitlab.com/ViniciusMurray/financeiro_V1","defaultBranch":"main"},{"id":"github-1387567125","name":"rua-da-musica-agencia","repoUrl":"https://github.com/viniciuscasagrande-creator/rua-da-musica-agencia","defaultBranch":"main"},{"id":"github-1352676607","name":"creative-dashboard","repoUrl":"https://github.com/viniciuscasagrande-creator/creative-dashboard","defaultBranch":"main"},{"id":"gitlab-86723910","name":"EDDIE","repoUrl":"https://gitlab.com/ViniciusMurray/EDDIE","defaultBranch":"main"},{"id":"gitlab-86687362","name":"MASTER","repoUrl":"https://gitlab.com/ViniciusMurray/MASTER","defaultBranch":"main"},{"id":"gitlab-86687113","name":"masternewpdt","repoUrl":"https://gitlab.com/ViniciusMurray/masternewpdt","defaultBranch":"main"},{"id":"github-1375076119","name":"newpdtv1","repoUrl":"https://github.com/viniciuscasagrande-creator/newpdtv1","defaultBranch":"main"},{"id":"github-1303158657","name":"modelodevendas","repoUrl":"https://github.com/viniciuscasagrande-creator/modelodevendas","defaultBranch":"main"},{"id":"github-1356385605","name":"Modulos-de-vendas_backup","repoUrl":"https://github.com/viniciuscasagrande-creator/Modulos-de-vendas_backup","defaultBranch":"main"},{"id":"vercel-vercel2-prj_25bNX8H9vSy5fJ2hD1FgNhyvbc73","name":"modulos-de-vendas","repoUrl":"","defaultBranch":"main"},{"id":"vercel-vercel2-prj_MmbagEGLsDKWlZ6qLowx61gL5EjR","name":"diskhub-premium-frontend","repoUrl":"","defaultBranch":"main"},{"id":"gitlab-85973285","name":"safesaff","repoUrl":"https://gitlab.com/ViniciusMurray/safesaff","defaultBranch":"main"},{"id":"github-1347583522","name":"safsafe","repoUrl":"https://github.com/viniciuscasagrande-creator/safsafe","defaultBranch":"main"},{"id":"github-1307719932","name":"Curitiba-360","repoUrl":"https://github.com/viniciuscasagrande-creator/Curitiba-360","defaultBranch":"main"},{"id":"github-1309905827","name":"sitecwb360","repoUrl":"https://github.com/viniciuscasagrande-creator/sitecwb360","defaultBranch":"main"},{"id":"vercel-vercel1-prj_XQfXd8LqumMWcyOqi1k28xtZOqwo","name":"curitiba360-app","repoUrl":"","defaultBranch":"main"},{"id":"gitlab-84778736","name":"Curitiba-360","repoUrl":"https://gitlab.com/ViniciusMurray/Curitiba-360","defaultBranch":"main"},{"id":"vercel-vercel1-prj_wpy0D7A3WpDywBaabUFjS2YxYn6x","name":"curitiba360-enterprise","repoUrl":"","defaultBranch":"main"},{"id":"vercel-vercel1-prj_mbBTzIn6nj5P34l2FVjtw0ZbGW2K","name":"curitiba-360","repoUrl":"","defaultBranch":"main"},{"id":"vercel-vercel1-prj_rPS8JYpyGdafn1dEFLDwGOqsyn1E","name":"curitiba360-backoffice","repoUrl":"","defaultBranch":"main"},{"id":"vercel-vercel1-prj_JwP41ZYcLkEJu3UBPz8TTsbLpB8K","name":"modulos-de-vendas","repoUrl":"","defaultBranch":"main"}];
+const CORRS = [{"projectId":"github-1309905827","projectName":"sitecwb360","title":"Último status de deploy indica falha","severity":"critical","occurrences":7,"openTasks":0,"evidence":"Status registrado na Vercel: ERROR. O ambiente de produção pode estar desatualizado.","recommendation":"Falha recorrente: comparar alterações e deploys recentes antes de nova tentativa."}];
+let proposals = [{"id":"69e0d851-83e4-47f9-9d4c-470e63a422f4","projectId":"github-1387567125","projectName":"rua-da-musica-agencia","title":"docs: adicionar descricao tecnica ao catalogo DevCentral","body":"Proposta de atualizacao da descricao tecnica homologada na Fase 4.3/4.5 (sem alteracao automatica de codigo).","head":"feature/docs-catalogo","base":"main","state":"approved","prUrl":null,"createdAt":"2026-11-13T19:28:03.000Z","updatedAt":"2026-11-13T19:28:03.000Z"}];
+let auditLogs = [{"event":"maintenance.scheduled","actor":"admin autenticado","targetId":null,"details":"Gerados 1; ignorados 0; falhas 0","createdAt":"2026-11-13T19:28:03.000Z"},{"event":"proposal.approve","actor":"admin autenticado","targetId":"69e0d851-83e4-47f9-9d4c-470e63a422f4","details":"Decisão explícita do administrador; nenhuma alteração de código executada.","createdAt":"2026-11-13T19:28:03.000Z"},{"event":"proposal.created","actor":"admin autenticado","targetId":"69e0d851-83e4-47f9-9d4c-470e63a422f4","details":"rua-da-musica-agencia · feature/docs-catalogo → main","createdAt":"2026-11-13T19:28:03.000Z"}];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function showNotice(msg) {
+  const el = document.getElementById("op-notice");
+  el.style.display = "block";
+  el.textContent = msg;
+}
+
+function renderOperations() {
+  const pid = document.getElementById("op-proj").value;
+  const q = (document.getElementById("op-query").value || "").toLowerCase();
+  const curProj = PROJS.find(p => p.id === pid);
+  document.getElementById("op-proj-meta").textContent = "Projeto: " + (curProj ? curProj.name : "Selecione um projeto acima") + ". Repositório: " + (curProj && curProj.repoUrl ? curProj.repoUrl : "não configurado");
+
+  const filtered = CORRS.filter(c => (!pid || c.projectId === pid) && (c.title + " " + c.projectName + " " + c.evidence).toLowerCase().includes(q));
+  document.getElementById("op-corr-list").innerHTML = filtered.length ? filtered.map(c => `
+    <article class="item">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <strong style="font-size:14px">${esc(c.title)}</strong>
+        <span style="font-size:12px;color:#fbbf7a">${c.occurrences} ocorrências • ${c.openTasks} planos abertos</span>
+      </div>
+      <p style="margin:4px 0 0;font-size:12px;color:#9fb1d0">${esc(c.projectName)} • ${esc(c.severity)}</p>
+      <p style="margin:8px 0 0;font-size:12px;color:#c9d6ea">${esc(c.recommendation)}</p>
+      <p style="margin:4px 0 0;font-size:12px;color:#8fa0be">${esc(c.evidence)}</p>
+    </article>
+  `).join("") : '<p style="margin:0;font-size:12px;color:#9eabc6">Nenhuma correlação encontrada para estes filtros. Não significa ausência de problemas.</p>';
+
+  document.getElementById("op-prop-list").innerHTML = proposals.length ? proposals.map(p => `
+    <article class="item" style="display:grid;gap:8px">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <strong style="font-size:14px">${esc(p.title)}</strong>
+        <span style="font-size:12px;color:#b4a6ff">${esc(p.state)}</span>
+      </div>
+      <p style="margin:0;font-size:12px;color:#9faccc">${esc(p.projectName)} · ${esc(p.head)} → ${esc(p.base)}</p>
+      <p style="margin:0;font-size:12px;color:#c8d3e8;white-space:pre-wrap">${esc((p.body || "").slice(0, 600))}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${p.state === "proposed" ? `
+          <button type="button" class="btn" onclick="window.__decideProp('${esc(p.id)}','approve')">Aprovar</button>
+          <button type="button" class="btn" onclick="window.__decideProp('${esc(p.id)}','reject')">Rejeitar</button>
+        ` : ""}
+        ${p.state === "approved" ? `
+          <button type="button" class="btn" onclick="window.__confirmDraftPr('${esc(p.id)}')">Confirmar criação de PR draft</button>
+        ` : ""}
+        ${p.prUrl ? `<a href="${esc(p.prUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:13px;color:#8bd6ff">Abrir PR no GitHub</a>` : ""}
+      </div>
+    </article>
+  `).join("") : '<p style="margin:0;font-size:12px;color:#9faccc">Nenhuma proposta criada.</p>';
+
+  document.getElementById("op-audit-list").innerHTML = auditLogs.length ? auditLogs.map(a => `
+    <div class="item">
+      <p style="margin:0;font-size:12px;font-weight:700">${esc(a.event)} <span style="font-weight:400;color:#9cadc8">· ${new Date(a.createdAt).toLocaleString("pt-BR")}</span></p>
+      <p style="margin:4px 0 0;font-size:12px;color:#a6b6cf">${esc(a.actor)} · ${esc(a.details)}</p>
+    </div>
+  `).join("") : '<p style="margin:0;font-size:12px;color:#a6b6cf">Sem registros até agora.</p>';
+}
+
+window.__decideProp = (id, action) => {
+  const item = proposals.find(p => p.id === id);
+  if (!item) return;
+  item.state = action === "approve" ? "approved" : "rejected";
+  auditLogs.unshift({
+    event: "proposal." + action,
+    actor: "admin autenticado",
+    targetId: id,
+    details: "Decisão explícita do administrador; nenhuma alteração de código executada.",
+    createdAt: new Date().toISOString()
+  });
+  showNotice(action === "approve" ? "Proposta aprovada. Abra o PR apenas após revisar branch e alterações." : "Proposta rejeitada.");
+  renderOperations();
+};
+
+window.__confirmDraftPr = (id) => {
+  const item = proposals.find(p => p.id === id);
+  if (!item) return;
+  if (!window.confirm(`Confirmar criação de PR draft para ${item.projectName} (${item.head} → ${item.base}) no GitHub?`)) return;
+  showNotice("Solicitação registrada. No servidor Next.js autenticado, o PR draft é aberto via GITHUB_TOKEN.");
+};
+
+document.getElementById("op-proj").onchange = renderOperations;
+document.getElementById("op-query").oninput = renderOperations;
+document.getElementById("btn-op-refresh").onclick = renderOperations;
+document.getElementById("btn-op-preventive").onclick = () => {
+  auditLogs.unshift({
+    event: "maintenance.scheduled",
+    actor: "admin autenticado",
+    targetId: null,
+    details: "Verificação preventiva manual acionada.",
+    createdAt: new Date().toISOString()
+  });
+  showNotice("Manutenção preventiva concluída; consulte o histórico do Assistente.");
+  renderOperations();
+};
+document.getElementById("op-pr-form").onsubmit = (e) => {
+  e.preventDefault();
+  const pid = document.getElementById("op-proj").value || (PROJS[0] && PROJS[0].id) || "";
+  const proj = PROJS.find(p => p.id === pid);
+  if (!proj) return;
+  const title = document.getElementById("pr-title").value.trim();
+  const body = document.getElementById("pr-body").value.trim();
+  const head = document.getElementById("pr-head").value.trim();
+  const base = document.getElementById("pr-base").value.trim();
+  const id = "prop_" + Date.now();
+  proposals.unshift({
+    id, projectId: proj.id, projectName: proj.name, title, body, head, base,
+    state: "proposed", prUrl: null, createdAt: new Date().toISOString()
+  });
+  auditLogs.unshift({
+    event: "proposal.created",
+    actor: "admin autenticado",
+    targetId: id,
+    details: `${proj.name} · ${head} → ${base}`,
+    createdAt: new Date().toISOString()
+  });
+  showNotice("Proposta registrada; revise e aprove abaixo.");
+  renderOperations();
+};
+if (PROJS[0]) document.getElementById("op-proj").value = PROJS[0].id;
+renderOperations();
+</script>
+</body>
+</html>

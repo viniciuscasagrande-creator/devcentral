@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="online"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_online_short"
+        android:shortcutLongLabel="@string/shortcut_online_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.devcentral.mobile"
+            android:targetClass="com.devcentral.mobile.MainActivity">
+            <extra android:name="shortcut_path" android:value="/?tab=online" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="telemetry"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_telemetry_short"
+        android:shortcutLongLabel="@string/shortcut_telemetry_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.devcentral.mobile"
+            android:targetClass="com.devcentral.mobile.MainActivity">
+            <extra android:name="shortcut_path" android:value="/telemetria" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="assistant"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_assistant_short"
+        android:shortcutLongLabel="@string/shortcut_assistant_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.devcentral.mobile"
+            android:targetClass="com.devcentral.mobile.MainActivity">
+            <extra android:name="shortcut_path" android:value="/assistente" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="reports"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_reports_short"
+        android:shortcutLongLabel="@string/shortcut_reports_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.devcentral.mobile"
+            android:targetClass="com.devcentral.mobile.MainActivity">
+            <extra android:name="shortcut_path" android:value="/relatorios" />
+        </intent>
+    </shortcut>
+</shortcuts>

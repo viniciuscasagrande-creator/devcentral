@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assistente de Manutenção | DevCentral 3.0</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070a14;color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;padding:24px 16px;scrollbar-gutter:stable}
+@media(min-width:640px){body{padding:40px}}
+.wrap{max-width:1152px;margin:0 auto;display:grid;gap:24px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#bac7e3;text-decoration:none;min-height:44px}
+.back:hover{color:#fff}
+.navbtn{padding:10px 12px;border-radius:12px;border:1px solid #334461;background:#151c30;color:#fff;font-size:12px;text-decoration:none}
+.hero{border-radius:18px;border:1px solid rgba(80,68,141,0.6);background:linear-gradient(135deg,#161938,#111b30,#0d222f);padding:24px}
+.panel{border-radius:16px;border:1px solid #293756;background:#111b2e;padding:20px}
+.sel,.btn{min-height:44px;border-radius:12px;border:1px solid #34425f;background:#0b1425;color:#fff;padding:10px 14px;font-size:14px;cursor:pointer}
+.btn-primary{min-height:48px;padding:12px 20px;border-radius:12px;background:linear-gradient(90deg,#6c4bef,#4e6bed);border:0;color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.card{border-radius:14px;border:1px solid #30415f;background:#111b2e;padding:16px;display:grid;gap:10px}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <a href="/" class="back">← Voltar ao painel</a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="/telemetria" class="navbtn">Telemetria</a>
+      <a href="/relatorios" class="navbtn">Relatórios</a>
+    </div>
+  </header>
+  <section class="hero">
+    <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:1.6px;font-weight:700;color:#b9a7ff">🤖 DevCentral 3.0 • Central de manutenção</p>
+    <h1 style="margin:12px 0 0;font-size:clamp(24px,4vw,36px);font-weight:900">Assistente Inteligente de Manutenção</h1>
+    <p style="margin:12px 0 0;font-size:14px;color:#afbdd8;max-width:760px">Analisa recomendações, alertas recorrentes e tarefas do Neon. Propõe ações verificáveis sem editar código, executar comandos ou disparar deploys.</p>
+  </section>
+  <section class="panel" style="display:grid;gap:16px">
+    <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
+      <label style="display:block;font-size:14px;font-weight:700;color:#d9e5f9">Projeto
+        <select id="proj-sel" aria-label="Selecionar projeto" class="sel" style="margin-top:8px;width:100%">
+          <option value="github-devcentral">DevCentral 2.1 (Cockpit de Projetos) (GitHub)</option><option value="github-1451721834">PLANO-DE-A-O-ERP (GitHub)</option><option value="github-1347744165">safesaff (GitHub)</option><option value="github-1455635207">devcentral (GitHub)</option><option value="github-1447429361">BRAVO_II (GitHub)</option><option value="vercel-vercel2-prj_ebuNylA1sEN3tWuxipkZJag5aiEW">bravo-ii-portal-produtor (Vercel)</option><option value="vercel-vercel2-prj_1kJ2nieprbL3Wc2tTX3iSwMzKx5l">bravo-ii-api (Vercel)</option><option value="vercel-vercel2-prj_LyuQ9YSLjL8ZALPA1c7TqaMfe9h2">delta_1 (Vercel)</option><option value="github-1395298801">financeiro_V1 (GitHub)</option><option value="gitlab-87358255">KEEPER (GitLab)</option><option value="github-1402323851">ERPV1-MIRROR (GitHub)</option><option value="gitlab-87077183">financeiro_V1 (GitLab)</option><option value="github-1387567125">rua-da-musica-agencia (GitHub)</option><option value="github-1352676607">creative-dashboard (GitHub)</option><option value="gitlab-86723910">EDDIE (GitLab)</option><option value="gitlab-86687362">MASTER (GitLab)</option><option value="gitlab-86687113">masternewpdt (GitLab)</option><option value="github-1375076119">newpdtv1 (GitHub)</option><option value="github-1303158657">modelodevendas (GitHub)</option><option value="github-1356385605">Modulos-de-vendas_backup (GitHub)</option><option value="vercel-vercel2-prj_25bNX8H9vSy5fJ2hD1FgNhyvbc73">modulos-de-vendas (Vercel)</option><option value="vercel-vercel2-prj_MmbagEGLsDKWlZ6qLowx61gL5EjR">diskhub-premium-frontend (Vercel)</option><option value="gitlab-85973285">safesaff (GitLab)</option><option value="github-1347583522">safsafe (GitHub)</option><option value="github-1307719932">Curitiba-360 (GitHub)</option><option value="github-1309905827">sitecwb360 (GitHub)</option><option value="vercel-vercel1-prj_XQfXd8LqumMWcyOqi1k28xtZOqwo">curitiba360-app (Vercel)</option><option value="gitlab-84778736">Curitiba-360 (GitLab)</option><option value="vercel-vercel1-prj_wpy0D7A3WpDywBaabUFjS2YxYn6x">curitiba360-enterprise (Vercel)</option><option value="vercel-vercel1-prj_mbBTzIn6nj5P34l2FVjtw0ZbGW2K">curitiba-360 (Vercel)</option><option value="vercel-vercel1-prj_rPS8JYpyGdafn1dEFLDwGOqsyn1E">curitiba360-backoffice (Vercel)</option><option value="vercel-vercel1-prj_JwP41ZYcLkEJu3UBPz8TTsbLpB8K">modulos-de-vendas (Vercel)</option>
+        </select>
+      </label>
+      <button type="button" id="btn-analyze" class="btn-primary">✨ Analisar projeto</button>
+    </div>
+    <p style="margin:0;font-size:12px;color:#95a5c2">Modo seguro ativo: diagnóstico por regras sobre os dados sincronizados no Neon. Nenhuma alteração de código ou deploy é executada automaticamente.</p>
+    <div id="notice-box" style="display:none;padding:12px;border-radius:12px;border:1px solid rgba(16,185,129,0.4);background:rgba(6,78,59,0.25);font-size:13px;color:#a7f3d0"></div>
+  </section>
+  <div id="report-box"></div>
+  <section class="panel">
+    <button type="button" id="btn-hist" aria-expanded="false" aria-controls="maintenance-history" style="width:100%;text-align:left;background:transparent;border:0;color:#fff;font-weight:800;font-size:14px;display:flex;justify-content:space-between;align-items:center;min-height:44px;cursor:pointer">
+      <span>🕒 Histórico de análises (<span id="hist-count">0</span> registros)</span>
+      <span id="hist-toggle">+</span>
+    </button>
+    <div id="hist-wrap" style="display:none;margin-top:12px;gap:14px">
+      <p style="margin:0;font-size:12px;color:#9cacc8">Histórico completo salvo no Neon. O projeto acompanha a seleção acima.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">Pesquisar texto
+          <input id="hist-search" type="search" maxlength="160" aria-label="Pesquisar no histórico" placeholder="Projeto, erro ou evidência" class="sel" style="width:100%" />
+        </label>
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">Severidade
+          <select id="hist-sev" class="sel" style="width:100%">
+            <option value="">Todas</option>
+            <option value="critical">Crítico</option>
+            <option value="warning">Atenção</option>
+            <option value="info">Informativo</option>
+          </select>
+        </label>
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">Tipo
+          <select id="hist-method" class="sel" style="width:100%">
+            <option value="">Todas</option>
+            <option value="rules">Regras</option>
+            <option value="ai">Com IA</option>
+          </select>
+        </label>
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">De
+          <input id="hist-from" type="date" class="sel" style="width:100%" />
+        </label>
+        <label style="font-size:12px;color:#bac7e3;display:grid;gap:4px">Até
+          <input id="hist-to" type="date" class="sel" style="width:100%" />
+        </label>
+        <button type="button" id="btn-hist-clear" class="sel" style="align-self:end">Limpar filtros</button>
+      </div>
+      <div id="hist-list" style="display:grid;gap:8px"></div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid #293756;padding-top:12px">
+        <span id="hist-page-info" aria-live="polite" style="font-size:12px;color:#aebfda">Página 1 de 1 • 0 análises</span>
+        <div style="display:flex;gap:8px">
+          <button type="button" id="btn-hist-prev" class="sel">Anterior</button>
+          <button type="button" id="btn-hist-next" class="sel">Próxima</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <footer style="font-size:12px;color:#8f9fbd">🛡️ As recomendações não alteram arquivos ou deploys. A verificação posterior deve ocorrer na Telemetria Operacional antes de encerrar alertas.</footer>
+</main>
+<script>
+const RECS = [{"id":"deploy:failed:github-1309905827","projectId":"github-1309905827","projectName":"sitecwb360","category":"deploy","severity":"critical","kind":"confirmed_issue","title":"Último status de deploy indica falha","evidence":"Status registrado na Vercel: ERROR. O ambiente de produção pode estar desatualizado.","probableCause":"Erro de compilação TypeScript/Next.js, variável de ambiente ausente na Vercel ou falha no comando de build.","action":"Reproduza o build localmente, revise as variáveis de ambiente na conta Vercel vinculada e republique.","steps":["Execute o build local do projeto (sitecwb360) para inspecionar erros de compilação.","Confira se todas as variáveis (.env) estão definidas nas configurações da Vercel.","Faça novo commit/push para disparar um deploy limpo."],"commands":["npm run build","npx tsc --noEmit"],"proposedCode":{"filename":"next.config.ts (sitecwb360) — Proposta para Revisão Humana","language":"typescript","description":"Validação recomendada antes de republicar (nunca aplicada automaticamente sem aprovação).","snippet":"// Terminal: npx tsc --noEmit --incremental false\nconst apiUrl = process.env.NEXT_PUBLIC_API_URL ?? \"\";\nif (!apiUrl && process.env.NODE_ENV === \"production\") {\n  console.warn(\"[sitecwb360] Variável ausente no build.\");\n}"},"href":"https://site-cwb-360-diskhub.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:github-1455635207","projectId":"github-1455635207","projectName":"devcentral","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://github.com/viniciuscasagrande-creator/devcentral","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:gitlab-87358255","projectId":"gitlab-87358255","projectName":"KEEPER","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://gitlab.com/ViniciusMurray/keeper","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:github-1402323851","projectId":"github-1402323851","projectName":"ERPV1-MIRROR","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://github.com/viniciuscasagrande-creator/ERPV1-MIRROR","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:github-1387567125","projectId":"github-1387567125","projectName":"rua-da-musica-agencia","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://github.com/viniciuscasagrande-creator/rua-da-musica-agencia","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:github-1352676607","projectId":"github-1352676607","projectName":"creative-dashboard","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://github.com/viniciuscasagrande-creator/creative-dashboard","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:gitlab-86687113","projectId":"gitlab-86687113","projectName":"masternewpdt","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://gitlab.com/ViniciusMurray/masternewpdt","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:github-1303158657","projectId":"github-1303158657","projectName":"modelodevendas","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://github.com/viniciuscasagrande-creator/modelodevendas","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:github-1356385605","projectId":"github-1356385605","projectName":"Modulos-de-vendas_backup","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://github.com/viniciuscasagrande-creator/Modulos-de-vendas_backup","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:gitlab-85973285","projectId":"gitlab-85973285","projectName":"safesaff","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://gitlab.com/ViniciusMurray/safesaff","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:github-1347583522","projectId":"github-1347583522","projectName":"safsafe","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://github.com/viniciuscasagrande-creator/safsafe","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:github-1307719932","projectId":"github-1307719932","projectName":"Curitiba-360","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://github.com/viniciuscasagrande-creator/Curitiba-360","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:github-1309905827","projectId":"github-1309905827","projectName":"sitecwb360","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://github.com/viniciuscasagrande-creator/sitecwb360","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"documentation:missing-description:gitlab-84778736","projectId":"gitlab-84778736","projectName":"Curitiba-360","category":"documentation","severity":"info","kind":"preventive_suggestion","title":"Descrição técnica ausente no catálogo","evidence":"O projeto não possui resumo cadastrado no banco de dados.","probableCause":"Campo About/Description em branco no GitHub/GitLab.","action":"Adicione uma descrição objetiva com propósito, stack e link de produção.","steps":["Preencha a descrição no repositório GitHub/GitLab ou diretamente no editor do DevCentral."],"commands":[],"href":"https://gitlab.com/ViniciusMurray/Curitiba-360","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel2-prj_ebuNylA1sEN3tWuxipkZJag5aiEW","projectId":"vercel-vercel2-prj_ebuNylA1sEN3tWuxipkZJag5aiEW","projectName":"bravo-ii-portal-produtor","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://bravo-ii-portal-produtor.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel2-prj_1kJ2nieprbL3Wc2tTX3iSwMzKx5l","projectId":"vercel-vercel2-prj_1kJ2nieprbL3Wc2tTX3iSwMzKx5l","projectName":"bravo-ii-api","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://bravo-ii-api.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel2-prj_LyuQ9YSLjL8ZALPA1c7TqaMfe9h2","projectId":"vercel-vercel2-prj_LyuQ9YSLjL8ZALPA1c7TqaMfe9h2","projectName":"delta_1","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://delta1-zeta.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel2-prj_25bNX8H9vSy5fJ2hD1FgNhyvbc73","projectId":"vercel-vercel2-prj_25bNX8H9vSy5fJ2hD1FgNhyvbc73","projectName":"modulos-de-vendas","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://modulos-de-vendas-eight.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel2-prj_MmbagEGLsDKWlZ6qLowx61gL5EjR","projectId":"vercel-vercel2-prj_MmbagEGLsDKWlZ6qLowx61gL5EjR","projectName":"diskhub-premium-frontend","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://diskhub-premium-frontend.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel1-prj_XQfXd8LqumMWcyOqi1k28xtZOqwo","projectId":"vercel-vercel1-prj_XQfXd8LqumMWcyOqi1k28xtZOqwo","projectName":"curitiba360-app","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://curitiba360-app.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel1-prj_wpy0D7A3WpDywBaabUFjS2YxYn6x","projectId":"vercel-vercel1-prj_wpy0D7A3WpDywBaabUFjS2YxYn6x","projectName":"curitiba360-enterprise","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://curitiba360-enterprise.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel1-prj_mbBTzIn6nj5P34l2FVjtw0ZbGW2K","projectId":"vercel-vercel1-prj_mbBTzIn6nj5P34l2FVjtw0ZbGW2K","projectName":"curitiba-360","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://curitiba-360-six.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel1-prj_rPS8JYpyGdafn1dEFLDwGOqsyn1E","projectId":"vercel-vercel1-prj_rPS8JYpyGdafn1dEFLDwGOqsyn1E","projectName":"curitiba360-backoffice","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://curitiba360-backoffice.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"},{"id":"repository:missing-link:vercel-vercel1-prj_JwP41ZYcLkEJu3UBPz8TTsbLpB8K","projectId":"vercel-vercel1-prj_JwP41ZYcLkEJu3UBPz8TTsbLpB8K","projectName":"modulos-de-vendas","category":"repository","severity":"info","kind":"confirmed_issue","title":"Projeto sem repositório Git vinculado","evidence":"Projeto detectado apenas na hospedagem (Vercel) sem URL de repositório GitHub/GitLab.","probableCause":"Deploy avulso via CLI ou repositório com nome divergente entre GitHub/GitLab e Vercel.","action":"Associe a URL do repositório Git correspondente para unificar o rastreamento.","steps":["Verifique na Vercel qual repositório Git está conectado ao projeto.","Cadastre a URL do repositório no card do projeto no DevCentral."],"commands":["git remote -v"],"href":"https://modulos-de-vendas.vercel.app","status":"open","detectedAt":"2026-11-13T19:28:03.849Z"}];
+const ALERTS = [{"id":"deploy:failed:github-1309905827","projectId":"github-1309905827","projectName":"sitecwb360","title":"Último status de deploy indica falha","evidence":"Status registrado na Vercel: ERROR. O ambiente de produção pode estar desatualizado.","severity":"critical","state":"active","readAt":null,"firstSeenAt":"2026-11-13T17:25:10.000Z","lastSeenAt":"2026-11-13T19:28:04.000Z","recoveredAt":null,"occurrences":7}];
+const PROJS = [{"id":"github-devcentral","name":"DevCentral 2.1 (Cockpit de Projetos)","source":"GitHub"},{"id":"github-1451721834","name":"PLANO-DE-A-O-ERP","source":"GitHub"},{"id":"github-1347744165","name":"safesaff","source":"GitHub"},{"id":"github-1455635207","name":"devcentral","source":"GitHub"},{"id":"github-1447429361","name":"BRAVO_II","source":"GitHub"},{"id":"vercel-vercel2-prj_ebuNylA1sEN3tWuxipkZJag5aiEW","name":"bravo-ii-portal-produtor","source":"Vercel"},{"id":"vercel-vercel2-prj_1kJ2nieprbL3Wc2tTX3iSwMzKx5l","name":"bravo-ii-api","source":"Vercel"},{"id":"vercel-vercel2-prj_LyuQ9YSLjL8ZALPA1c7TqaMfe9h2","name":"delta_1","source":"Vercel"},{"id":"github-1395298801","name":"financeiro_V1","source":"GitHub"},{"id":"gitlab-87358255","name":"KEEPER","source":"GitLab"},{"id":"github-1402323851","name":"ERPV1-MIRROR","source":"GitHub"},{"id":"gitlab-87077183","name":"financeiro_V1","source":"GitLab"},{"id":"github-1387567125","name":"rua-da-musica-agencia","source":"GitHub"},{"id":"github-1352676607","name":"creative-dashboard","source":"GitHub"},{"id":"gitlab-86723910","name":"EDDIE","source":"GitLab"},{"id":"gitlab-86687362","name":"MASTER","source":"GitLab"},{"id":"gitlab-86687113","name":"masternewpdt","source":"GitLab"},{"id":"github-1375076119","name":"newpdtv1","source":"GitHub"},{"id":"github-1303158657","name":"modelodevendas","source":"GitHub"},{"id":"github-1356385605","name":"Modulos-de-vendas_backup","source":"GitHub"},{"id":"vercel-vercel2-prj_25bNX8H9vSy5fJ2hD1FgNhyvbc73","name":"modulos-de-vendas","source":"Vercel"},{"id":"vercel-vercel2-prj_MmbagEGLsDKWlZ6qLowx61gL5EjR","name":"diskhub-premium-frontend","source":"Vercel"},{"id":"gitlab-85973285","name":"safesaff","source":"GitLab"},{"id":"github-1347583522","name":"safsafe","source":"GitHub"},{"id":"github-1307719932","name":"Curitiba-360","source":"GitHub"},{"id":"github-1309905827","name":"sitecwb360","source":"GitHub"},{"id":"vercel-vercel1-prj_XQfXd8LqumMWcyOqi1k28xtZOqwo","name":"curitiba360-app","source":"Vercel"},{"id":"gitlab-84778736","name":"Curitiba-360","source":"GitLab"},{"id":"vercel-vercel1-prj_wpy0D7A3WpDywBaabUFjS2YxYn6x","name":"curitiba360-enterprise","source":"Vercel"},{"id":"vercel-vercel1-prj_mbBTzIn6nj5P34l2FVjtw0ZbGW2K","name":"curitiba-360","source":"Vercel"},{"id":"vercel-vercel1-prj_rPS8JYpyGdafn1dEFLDwGOqsyn1E","name":"curitiba360-backoffice","source":"Vercel"},{"id":"vercel-vercel1-prj_JwP41ZYcLkEJu3UBPz8TTsbLpB8K","name":"modulos-de-vendas","source":"Vercel"}];
+const NEON_HISTORY = [{"id":"15c4eaba-1744-469e-9935-02ae61ff1337","projectId":"github-1387567125","projectName":"rua-da-musica-agencia","createdAt":"2026-11-13T18:57:07.000Z","method":"rules","summary":"1 item(ns) de manutenção identificado(s) para rua-da-musica-agencia. 0 com recorrência registrada de três ou mais ocorrências. Priorize as evidências de deploy e os alertas críticos.","findings":[{"id":"doc:short:github-1387567125","steps":["Documentar propósito, stack (JavaScript) e URL de produção (https://rua-da-musica-agencia.vercel.app) no DevCentral e no GitHub.","Executar verificação operacional na Telemetria após atualizar o catálogo.","Confirmar que o alerta foi resolvido."],"title":"Descrição técnica ausente ou muito curta no repositório","source":"Diagnóstico armazenado no Neon","category":"documentation","commands":["git status","npm run build"],"evidence":"O projeto rua-da-musica-agencia (GitHub) está registrado sem descrição técnica detalhada.","severity":"info","confidence":"possible","recurrence":1}],"aiAdvice":null,"sourceNote":"Análise baseada em recomendações, alertas e tarefas armazenados no Neon; não substitui inspeção ao vivo de logs ou disponibilidade."},{"id":"01488094-61bc-4c3a-86e1-049570d5c223","projectId":"github-1387567125","projectName":"rua-da-musica-agencia","createdAt":"2026-11-13T18:56:20.000Z","method":"rules","summary":"1 item(ns) de manutenção identificado(s) para rua-da-musica-agencia. 0 com recorrência registrada de três ou mais ocorrências. Priorize as evidências de deploy e os alertas críticos.","findings":[{"id":"doc:short:github-1387567125","steps":["Documentar propósito, stack (JavaScript) e URL de produção (https://rua-da-musica-agencia.vercel.app) no DevCentral e no GitHub.","Executar verificação operacional na Telemetria após atualizar o catálogo.","Confirmar que o alerta foi resolvido."],"title":"Descrição técnica ausente ou muito curta no repositório","source":"Diagnóstico armazenado no Neon","category":"documentation","commands":["git status","npm run build"],"evidence":"O projeto rua-da-musica-agencia (GitHub) está registrado sem descrição técnica detalhada.","severity":"info","confidence":"possible","recurrence":1}],"aiAdvice":null,"sourceNote":"Análise baseada em recomendações, alertas e tarefas armazenados no Neon; não substitui inspeção ao vivo de logs ou disponibilidade."}];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const PAGE_SIZE = 10;
+let localHist = JSON.parse(localStorage.getItem("devcentral_maint_history_v3") || "[]");
+function mergeHistory(a, b) {
+  const seen = new Set();
+  const out = [];
+  for (const item of [...a, ...b]) {
+    if (!item || !item.id || seen.has(item.id)) continue;
+    seen.add(item.id);
+    out.push(item);
+  }
+  return out.sort((x, y) => new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime());
+}
+let history = mergeHistory(localHist, NEON_HISTORY);
+let histOpen = false;
+let histPage = 1;
+
+function runAnalysis(projectId) {
+  const proj = PROJS.find(p => p.id === projectId);
+  if (!proj) return;
+  const recs = RECS.filter(r => r.projectId === projectId);
+  const alerts = ALERTS.filter(a => a.projectId === projectId && a.state === "active");
+  const findings = recs.map(r => {
+    const rel = alerts.filter(a => a.id.includes(r.id) || a.title.toLowerCase() === r.title.toLowerCase());
+    const recurrence = rel.length ? Math.max(...rel.map(a => a.occurrences || 1)) : 1;
+    return {
+      id: r.id,
+      title: r.title,
+      severity: r.severity,
+      evidence: r.evidence,
+      confidence: r.kind === "preventive_suggestion" ? "possible" : "confirmed",
+      recurrence,
+      steps: (r.steps && r.steps.length ? r.steps : [r.action]).slice(0, 5),
+      commands: (r.commands || []).slice(0, 4),
+      source: "Diagnóstico armazenado no Neon"
+    };
+  });
+  const repeats = findings.filter(f => f.recurrence >= 3);
+  const report = {
+    id: "maint_" + Date.now(),
+    projectId,
+    projectName: proj.name,
+    method: "rules",
+    createdAt: new Date().toISOString(),
+    summary: findings.length
+      ? findings.length + " item(ns) de manutenção identificado(s) para " + proj.name + ". " + repeats.length + " com recorrência registrada de três ou mais ocorrências."
+      : "Nenhuma recomendação ativa encontrada para " + proj.name + " nos dados armazenados.",
+    sourceNote: "Análise baseada em recomendações, alertas e tarefas armazenados no Neon; não substitui inspeção ao vivo.",
+    findings
+  };
+  localHist = [report, ...localHist].slice(0, 200);
+  try { localStorage.setItem("devcentral_maint_history_v3", JSON.stringify(localHist)); } catch {}
+  history = mergeHistory(localHist, NEON_HISTORY);
+  histPage = 1;
+  renderReport(report);
+  renderHistory();
+  const nb = document.getElementById("notice-box");
+  nb.style.display = "block";
+  nb.textContent = "Análise concluída em modo seguro. Nenhuma alteração foi executada nos projetos.";
+}
+
+function renderReport(r) {
+  const sevLabel = { critical: "Crítico", warning: "Atenção", info: "Informativo" };
+  document.getElementById("report-box").innerHTML = `
+    <div style="display:grid;gap:14px">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <h2 style="margin:0;font-size:18px;font-weight:800">Relatório: ${esc(r.projectName)}</h2>
+          <span style="font-size:12px;color:#9faed0">${new Date(r.createdAt).toLocaleString("pt-BR")}</span>
+        </div>
+        <p style="margin:12px 0 0;font-size:14px;color:#dae6ff">${esc(r.summary)}</p>
+        <p style="margin:8px 0 0;font-size:12px;color:#91a2c4">${esc(r.sourceNote)}</p>
+      </div>
+      <h3 style="margin:4px 0 0;font-size:16px">📋 Recomendações (${r.findings.length})</h3>
+      ${r.findings.length === 0 ? '<div class="panel" style="font-size:14px;color:#abb9d5">Nenhuma ocorrência ativa encontrada nos registros.</div>' : r.findings.map(f => `
+        <article class="card">
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <strong style="font-size:15px">${esc(f.title)}</strong>
+            <span style="font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid #475569;color:#e2e8f0">${sevLabel[f.severity] || f.severity}</span>
+          </div>
+          <div style="font-size:12px;color:#abb9d5">${f.confidence==='confirmed'?'Evidência registrada':'Sugestão preventiva'} • ${esc(f.source)} • Recorrências registradas: ${f.recurrence}</div>
+          <div style="font-size:14px;color:#d5e0f4">${esc(f.evidence)}</div>
+          <ol style="margin:0;padding-left:20px;display:grid;gap:6px;font-size:13.5px;color:#bfd0e8">${f.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>
+          <div>
+            <button type="button" class="sel" onclick="window.__createTaskFromMaint('${esc(r.projectId)}','${esc(r.projectName)}','${esc(f.id)}','${esc(f.title)}','${esc(f.severity)}','${esc(f.evidence)}')">📋 Criar plano de ação</button>
+          </div>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+window.__createTaskFromMaint = (projectId, projectName, recId, title, severity, evidence) => {
+  const tasks = JSON.parse(localStorage.getItem("devcentral_tasks_v3") || "[]");
+  tasks.unshift({
+    id: "task_" + Date.now(),
+    projectId,
+    projectName,
+    recommendationId: recId,
+    title,
+    priority: severity === "critical" ? "high" : severity === "warning" ? "medium" : "low",
+    status: "todo",
+    assignee: "Admin",
+    dueDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+    checklist: [{ id: "step_1", text: "Revisar evidência e aplicar correção com aprovação", done: false }],
+    notes: evidence
+  });
+  try { localStorage.setItem("devcentral_tasks_v3", JSON.stringify(tasks)); } catch {}
+  const nb = document.getElementById("notice-box");
+  nb.style.display = "block";
+  nb.textContent = "Plano de ação criado! Abra Telemetria → Tarefas para acompanhar.";
+};
+
+function getFilteredProjectHistory() {
+  const cur = document.getElementById("proj-sel").value;
+  const q = (document.getElementById("hist-search")?.value || "").trim().toLowerCase();
+  const sev = document.getElementById("hist-sev")?.value || "";
+  const method = document.getElementById("hist-method")?.value || "";
+  const from = document.getElementById("hist-from")?.value || "";
+  const to = document.getElementById("hist-to")?.value || "";
+  return history.filter(h => {
+    if (cur && h.projectId !== cur) return false;
+    if (method && (h.method || "rules") !== method) return false;
+    if (sev && !(h.findings || []).some(f => f.severity === sev)) return false;
+    const day = String(h.createdAt || "").slice(0, 10);
+    if (from && day < from) return false;
+    if (to && day > to) return false;
+    if (q) {
+      const hay = [
+        h.projectName,
+        h.summary,
+        new Date(h.createdAt).toLocaleString("pt-BR"),
+        JSON.stringify(h.findings || [])
+      ].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderHistory() {
+  const list = getFilteredProjectHistory();
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (histPage > totalPages) histPage = totalPages;
+  const offset = (histPage - 1) * PAGE_SIZE;
+  const visible = list.slice(offset, offset + PAGE_SIZE);
+  document.getElementById("hist-count").textContent = String(total);
+  const wrap = document.getElementById("hist-wrap");
+  wrap.style.display = histOpen ? "grid" : "none";
+  document.getElementById("btn-hist").setAttribute("aria-expanded", String(histOpen));
+  document.getElementById("hist-toggle").textContent = histOpen ? "−" : "+";
+  const el = document.getElementById("hist-list");
+  el.innerHTML = visible.length ? visible.map((h, i) => `
+    <button type="button" class="sel" style="text-align:left;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap" onclick="window.__openHist(${offset + i})">
+      <span style="min-width:0"><strong style="display:block;color:#a59bff;font-size:12px">${esc(h.projectName)} • ${h.method === 'ai' ? 'IA' : 'Regras'}</strong><span style="display:block;margin-top:4px">${esc(h.summary.slice(0, 200))}</span></span>
+      <span style="font-size:12px;color:#95a9ca;flex-shrink:0">${new Date(h.createdAt).toLocaleString("pt-BR")}</span>
+    </button>
+  `).join("") : '<p style="margin:0;font-size:12px;color:#9cacc8">Nenhuma análise encontrada para os filtros selecionados.</p>';
+  document.getElementById("hist-page-info").textContent = `Página ${histPage} de ${totalPages} • ${total} análises`;
+  document.getElementById("btn-hist-prev").disabled = histPage <= 1;
+  document.getElementById("btn-hist-next").disabled = histPage >= totalPages;
+}
+
+window.__openHist = (idx) => {
+  const list = getFilteredProjectHistory();
+  if (list[idx]) {
+    renderReport(list[idx]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
+
+const resetAndRender = () => { histPage = 1; renderHistory(); };
+document.getElementById("btn-analyze").onclick = () => runAnalysis(document.getElementById("proj-sel").value);
+document.getElementById("proj-sel").onchange = () => {
+  document.getElementById("report-box").innerHTML = "";
+  resetAndRender();
+};
+document.getElementById("hist-search").oninput = resetAndRender;
+document.getElementById("hist-sev").onchange = resetAndRender;
+document.getElementById("hist-method").onchange = resetAndRender;
+document.getElementById("hist-from").onchange = resetAndRender;
+document.getElementById("hist-to").onchange = resetAndRender;
+document.getElementById("btn-hist-clear").onclick = () => {
+  document.getElementById("hist-search").value = "";
+  document.getElementById("hist-sev").value = "";
+  document.getElementById("hist-method").value = "";
+  document.getElementById("hist-from").value = "";
+  document.getElementById("hist-to").value = "";
+  resetAndRender();
+};
+document.getElementById("btn-hist-prev").onclick = () => {
+  if (histPage > 1) { histPage -= 1; renderHistory(); }
+};
+document.getElementById("btn-hist-next").onclick = () => {
+  histPage += 1; renderHistory();
+};
+document.getElementById("btn-hist").onclick = () => {
+  histOpen = !histOpen;
+  renderHistory();
+};
+renderHistory();
+</script>
+</body>
+</html>

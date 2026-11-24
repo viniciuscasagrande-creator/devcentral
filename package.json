@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:firebase": "node scripts/build-firebase.mjs",
+    "build:apk": "node scripts/build-apk.mjs",
+    "build:mobile": "node scripts/build-firebase.mjs && node scripts/build-apk.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",

@@ -598,7 +598,7 @@ fs.mkdirSync("firebase-dist/telemetria", { recursive: true });
 if (fs.existsSync("firebase-dist/projects.json")) {
   fs.unlinkSync("firebase-dist/projects.json");
 }
-for (const asset of ["manifest.json", "icon.svg", "sw.js", "devcentral-192.png", "devcentral-512.png"]) {
+for (const asset of ["manifest.json", "icon.svg", "sw.js", "devcentral-192.png", "devcentral-512.png", "icon-192.png", "icon-512.png"]) {
   const srcPath = path.resolve(process.cwd(), "public", asset);
   if (fs.existsSync(srcPath)) {
     fs.copyFileSync(srcPath, path.resolve(process.cwd(), "firebase-dist", asset));
@@ -610,14 +610,15 @@ function buildHtml(defaultTab = "all") {
 <html lang="pt-BR" class="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">
 <meta name="theme-color" content="#070a14">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DevCentral">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <title>DevCentral 3.0 — Workspace Pessoal &amp; Telemetria</title>
 <style>
 :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color-scheme:dark;--bg:#070a14;--surface:#0e1526;--surface2:#141d33;--border:#1f2a44;--text:#f1f5f9;--muted:#8b9bb8;--accent:#818cf8;--green:#3ddba0;--red:#ff4d6d;--amber:#f59e0b}
@@ -938,6 +939,7 @@ a{color:inherit;text-decoration:none}
           <a href="/operacoes" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#a5f3fc;border-radius:12px;background:rgba(18,52,68,0.45);border:1px solid rgba(56,189,248,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>⚙ &nbsp; Operações inteligentes</span><span style="font-size:10px;color:#67e8f9;font-weight:800">4.2–4.5</span></a>
           <a href="/assistente" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9befd;border-radius:12px;background:rgba(33,27,72,0.5);border:1px solid rgba(124,92,255,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>✦ &nbsp; Assistente de Manutenção</span><span class="pill-novo">IA</span></a>
           <a href="/relatorios" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#c9befd;border-radius:12px;background:rgba(13,46,40,0.35);border:1px solid rgba(45,212,160,0.35);font-weight:700;font-size:12px;margin-bottom:2px"><span>📊 &nbsp; Relatórios de Saúde</span><span style="font-size:10px;color:#3ddba0;font-weight:800">Neon</span></a>
+          <a href="/DevCentral-3.0-mobile.apk" download="DevCentral-3.0-mobile.apk" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:#3ddba0;border-radius:12px;background:rgba(13,46,40,0.55);border:1px solid rgba(45,212,160,0.55);font-weight:700;font-size:12px;margin-bottom:2px"><span>📱 &nbsp; Baixar App Android (.APK)</span><span style="font-size:10px;color:#3ddba0;font-weight:800">v3.0</span></a>
           <button data-tab="all" class="active"><span>🏠 &nbsp; Visão geral</span><span class="badge" id="nav-total">${totalCount}</span></button>
           <button onclick="window.__resetView();document.getElementById('projects-anchor').scrollIntoView({behavior:'smooth'})"><span>&lt;/&gt; &nbsp; Projetos</span></button>
           <button data-tab="telemetry"><span>📈 &nbsp; Telemetria &amp; Soluções</span><span class="pill-novo">Novo</span></button>
@@ -1320,7 +1322,8 @@ let syncLogs = INITIAL_LOGS;
 let tasks = INITIAL_TASKS;
 let opAlerts = INITIAL_ALERTS;
 let alertsOpen = false;
-let activeTab = window.location.pathname.includes("/telemetria") ? "telemetry" : DEFAULT_TAB;
+const urlTab = new URLSearchParams(window.location.search).get("tab");
+let activeTab = window.location.pathname.includes("/telemetria") ? "telemetry" : (urlTab && ["all","pinned","online","deployments","telemetry","activity"].includes(urlTab) ? urlTab : DEFAULT_TAB);
 let activeSubTab = "diagnostic";
 let selectedRecId = recommendations[0]?.id || null;
 let currentModalProjectId = null;

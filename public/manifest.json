@@ -1,16 +1,51 @@
 {
   "name": "DevCentral 4.0 — Central Inteligente de Desenvolvimento",
   "short_name": "DevCentral",
+  "id": "/?source=pwa",
   "description": "Workspace de projetos, telemetria, copiloto contextual, revisão de PRs e relatórios.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#070a14",
   "theme_color": "#070a14",
   "orientation": "any",
+  "categories": ["developer", "productivity", "utilities"],
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "/devcentral-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/devcentral-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/devcentral-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Projetos Online",
+      "short_name": "Online",
+      "description": "Visualizar projetos em produção",
+      "url": "/?tab=online",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Telemetria & Soluções",
+      "short_name": "Telemetria",
+      "description": "Diagnósticos e recomendações em tempo real",
+      "url": "/telemetria",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Assistente de Manutenção",
+      "short_name": "Assistente",
+      "description": "Central inteligente de manutenção",
+      "url": "/assistente",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Relatórios de Saúde",
+      "short_name": "Relatórios",
+      "description": "Relatórios diários de saúde dos projetos",
+      "url": "/relatorios",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }
