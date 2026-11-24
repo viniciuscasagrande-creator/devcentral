@@ -550,7 +550,7 @@ export default function DevCentralDashboard() {
   return (
     <div className="min-h-screen min-w-0 grid grid-cols-1 lg:grid-cols-[292px_1fr] bg-[#070a14] text-white">
       {/* Mobile toolbar stays outside desktop sidebar; all actions use existing handlers. */}
-      <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#273254] bg-[#080c17]/95 backdrop-blur-lg px-4 py-3 min-w-0">
+      <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#273254] bg-[#080c17]/95 backdrop-blur-lg px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] pb-3 min-w-0">
         <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menu" aria-controls="devcentral-mobile-drawer" aria-expanded={mobileMenuOpen}
           className="min-h-11 min-w-11 grid place-items-center rounded-xl border border-[#344463] bg-[#141c32] text-white">
           <Menu className="w-5 h-5" />
@@ -565,7 +565,7 @@ export default function DevCentralDashboard() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[70] lg:hidden" role="presentation">
           <button type="button" className="absolute inset-0 bg-black/80" aria-label="Fechar menu" onClick={() => setMobileMenuOpen(false)} />
-          <div id="devcentral-mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu principal" className="absolute inset-y-0 left-0 w-[min(88vw,340px)] overflow-y-auto bg-[#080c17] shadow-2xl">
+          <div id="devcentral-mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu principal" className="absolute inset-y-0 left-0 w-[min(88vw,340px)] overflow-y-auto bg-[#080c17] pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] shadow-2xl">
             <button type="button" className="sticky top-2 z-10 ml-auto mr-3 mt-2 grid min-h-11 min-w-11 place-items-center rounded-xl border border-[#344463] bg-[#151f35]" aria-label="Fechar menu" onClick={() => setMobileMenuOpen(false)}><CloseMenu className="w-5 h-5" /></button>
             <div className="[&>aside]:!border-0 [&>aside]:!min-h-0"><AppSidebar
               activeTab={activeTab}

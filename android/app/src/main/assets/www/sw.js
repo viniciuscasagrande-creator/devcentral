@@ -3,6 +3,8 @@ const STATIC_ASSETS = [
   "/",
   "/manifest.json",
   "/icon.svg",
+  "/devcentral-192.png",
+  "/devcentral-512.png",
   "/icon-192.png",
   "/icon-512.png",
   "/telemetria",
@@ -25,19 +27,19 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       )
     )
   );
   self.clients.claim();
 });
 
-// REGRA DE SEGURANÇA: Nunca armazenar respostas de /api/* ou requisições autenticadas em cache público/offline.
+// Segurança: não armazenar APIs ou respostas autenticadas em cache público.
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-  if (req.method !== "GET") return;
+  if (req.method !== "GET" || req.headers.has("authorization")) return;
   const url = new URL(req.url);
-  if (url.pathname.startsWith("/api/") || req.headers.get("authorization")) {
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) {
     return;
   }
 
@@ -57,7 +59,7 @@ self.addEventListener("fetch", (event) => {
 
   if (STATIC_ASSETS.includes(url.pathname)) {
     event.respondWith(
-      caches.match(req).then((cached) => cached || fetch(req))
+      caches.match(req).then((hit) => hit || fetch(req))
     );
   }
 });

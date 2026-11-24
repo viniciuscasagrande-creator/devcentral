@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,6 +13,8 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.WebChromeClient;
@@ -42,10 +45,64 @@ public class MainActivity extends Activity {
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.setStatusBarColor(Color.parseColor("#070A14"));
             window.setNavigationBarColor(Color.parseColor("#080C17"));
+
+            // Support display cutout (notch/camera punch-hole) cleanly
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                WindowManager.LayoutParams lp = window.getAttributes();
+                lp.layoutInDisplayCutoutMode =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                                ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                                : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                window.setAttributes(lp);
+            }
+
+            // Ensure light status/navigation bar icons on dark #070A14 background
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                WindowInsetsController controller = window.getInsetsController();
+                if (controller != null) {
+                    controller.setSystemBarsAppearance(
+                            0,
+                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                                    | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                    );
+                }
+            }
         }
 
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.parseColor("#070A14"));
+
+        // Handle Android 15+ (SDK 35/36) mandatory edge-to-edge system bar, cutout & IME insets
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+                @Override
+                public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                    int left = 0;
+                    int top = 0;
+                    int right = 0;
+                    int bottom = 0;
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        Insets sysBars = insets.getInsets(
+                                WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()
+                        );
+                        Insets ime = insets.getInsets(WindowInsets.Type.ime());
+                        left = sysBars.left;
+                        top = sysBars.top;
+                        right = sysBars.right;
+                        bottom = Math.max(sysBars.bottom, ime.bottom);
+                    } else {
+                        left = insets.getSystemWindowInsetLeft();
+                        top = insets.getSystemWindowInsetTop();
+                        right = insets.getSystemWindowInsetRight();
+                        bottom = insets.getSystemWindowInsetBottom();
+                    }
+
+                    v.setPadding(left, top, right, bottom);
+                    return insets;
+                }
+            });
+        }
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.parseColor("#070A14"));
